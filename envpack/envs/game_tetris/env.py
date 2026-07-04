@@ -501,8 +501,8 @@ class GymTetrisEnv(gym.Env):
 
         # Draw move history symbols
         arrow_y = CANVAS_SIZE[1] - FOOTER_PX // 2
-        arrow_x_start = CANVAS_SIZE[0] - 90
-        arrow_spacing = 10
+        arrow_x_start = CANVAS_SIZE[0] - 118
+        arrow_spacing = 14
         for i, (action, is_valid) in enumerate(self._move_history):
             color = (46, 204, 113) if is_valid else (231, 76, 60)
             self._draw_arrow(draw, arrow_x_start + i * arrow_spacing, arrow_y, action, color)

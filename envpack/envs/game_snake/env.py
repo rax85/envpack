@@ -388,8 +388,8 @@ class GymSnakeEnv(gym.Env):
 
         # Draw move history arrows
         arrow_y = CANVAS_SIZE[1] - FOOTER_PX // 2
-        arrow_x_start = CANVAS_SIZE[0] - 100
-        arrow_spacing = 10
+        arrow_x_start = CANVAS_SIZE[0] - 135
+        arrow_spacing = 16
         for i, (action, is_eaten) in enumerate(self.move_history):
             color = COLOR_HEAD if is_eaten else COLOR_TEXT_LIGHT
             self._draw_arrow(draw, arrow_x_start + i * arrow_spacing, arrow_y, action, color)
