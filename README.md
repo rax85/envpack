@@ -30,6 +30,9 @@ env = gym.make('envpack/2048-v0')
 # To run Sudoku
 # env = gym.make('envpack/Sudoku-v0')
 
+# To run Raptor
+# env = gym.make('envpack/Raptor-v0')
+
 observation, info = env.reset()
 done = False
 
@@ -111,3 +114,20 @@ A Gymnasium environment for solving standard 9x9 Sudoku puzzles.
     *   *Initial State*: ![Sudoku Initial State](screenshots/sudoku_screenshot_initial.png)
     *   *Mid-game*: ![Sudoku Mid-game State](screenshots/sudoku_screenshot_mid_game.png)
     *   *Solved State*: ![Sudoku Solved State](screenshots/sudoku_screenshot_solved.png)
+
+### 5. Raptor (`envpack/Raptor-v0`)
+
+A Gymnasium environment for a classic vertical scrolling shooter game inspired by Raptor: Call of the Shadows.
+
+*   **Action Space**: `Discrete(5)`:
+    *   `0`: Stay, `1`: Move Left, `2`: Move Right, `3`: Move Up, `4`: Move Down (ship boundaries are limited to the lower half of the screen)
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(20, 15)` representing the grid (0: empty, 1: player ship, 2: player laser, 3: basic enemy, 4: shooter enemy, 5: enemy bullet, 6: coin).
+    *   `'valid_mask'`: `Box(5,)` binary mask of valid movements.
+    *   `'total_score'`: `Box(1,)` representing the accumulated score.
+    *   `'shield'`: `Box(1,)` representing the player's shield health level `[0..100]`.
+*   **Rewards**: Survival reward of `+0.05` per step. Destroying a basic enemy yields `+1.0` (score +100), destroying a shooter enemy yields `+2.5` (score +250). Collecting gold coins yields `+2.0` (score +500, credits +$50). Taking damage from enemy bullets yields `-1.5` (-10% shield), taking damage from direct ship collisions yields `-5.0` (-30% shield). Dying yields `-10.0` death penalty and terminates the episode.
+*   **Screenshots**:
+    *   *Initial State*: ![Raptor Initial State](screenshots/raptor_screenshot_initial.png)
+    *   *Mid-game*: ![Raptor Mid-game State](screenshots/raptor_screenshot_mid_game.png)
+    *   *Game Over*: ![Raptor Game Over State](screenshots/raptor_screenshot_game_over.png)

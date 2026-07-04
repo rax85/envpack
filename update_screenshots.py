@@ -5,6 +5,7 @@ from envpack.envs.game_2048.env import Gym2048Env
 from envpack.envs.game_snake.env import GymSnakeEnv
 from envpack.envs.game_tetris.env import GymTetrisEnv
 from envpack.envs.game_sudoku.env import GymSudokuEnv
+from envpack.envs.game_raptor.env import GymRaptorEnv
 
 
 def save_screenshot(env, name):
@@ -70,6 +71,31 @@ def generate_sudoku_screenshots():
     save_screenshot(env_solved, "sudoku_screenshot_solved")
 
 
+def generate_raptor_screenshots():
+    env = GymRaptorEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "raptor_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    # Inject some items, enemies, bullets, lasers, and moves to showcase gameplay
+    env._enemies.append(([2, 2], 3)) # ENEMY_BASIC
+    env._enemies.append(([5, 7], 4)) # ENEMY_SHOOTER
+    env._bullets.append([7, 7])
+    env._coins.append([9, 10])
+    env._lasers.append([12, 5])
+    env.step(1) # LEFT
+    env.step(3) # UP
+    save_screenshot(env, "raptor_screenshot_mid_game")
+    
+    # Game Over
+    env.reset(seed=42)
+    env._shield = 0
+    save_screenshot(env, "raptor_screenshot_game_over")
+
+
 def main():
     print("Generating 2048 screenshots...")
     env_2048 = Gym2048Env()
@@ -85,6 +111,9 @@ def main():
 
     print("Generating Sudoku screenshots...")
     generate_sudoku_screenshots()
+
+    print("Generating Raptor screenshots...")
+    generate_raptor_screenshots()
 
 
 if __name__ == "__main__":

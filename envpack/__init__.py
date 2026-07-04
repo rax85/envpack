@@ -25,3 +25,9 @@ register(
     entry_point="envpack.envs.game_sudoku.env:GymSudokuEnv",
     max_episode_steps=200,
 )
+
+register(
+    id="envpack/Raptor-v0",
+    entry_point="envpack.envs.game_raptor.env:GymRaptorEnv",
+    max_episode_steps=1000,
+)
