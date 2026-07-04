@@ -36,6 +36,12 @@ env = gym.make('envpack/2048-v0')
 # To run Checkers
 # env = gym.make('envpack/Checkers-v0')
 
+# To run Tron
+# env = gym.make('envpack/Tron-v0')
+
+# To run Air Hockey
+# env = gym.make('envpack/AirHockey-v0')
+
 observation, info = env.reset()
 done = False
 
@@ -162,3 +168,43 @@ A Gymnasium environment for two-player American Checkers (Draughts) played on an
     *   *Initial State*: ![Checkers Initial State](screenshots/checkers_screenshot_initial.png)
     *   *Mid-game*: ![Checkers Mid-game State](screenshots/checkers_screenshot_mid_game.png)
     *   *Game Over*: ![Checkers Game Over State](screenshots/checkers_screenshot_game_over.png)
+
+### 2. Tron Light Cycles (`envpack/Tron-v0`)
+
+A Gymnasium environment for two-player simultaneous-move Tron Light Cycles played on a 30x30 grid.
+
+*   **Action Space**: `MultiDiscrete([4, 4])`:
+    *   `action[0]`: Player 1 action (`0`: Up, `1`: Down, `2`: Left, `3`: Right)
+    *   `action[1]`: Player 2 action (`0`: Up, `1`: Down, `2`: Left, `3`: Right)
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(30, 30)` representing the grid (0: empty, 1: P1 Head, 2: P1 Trail, 3: P2 Head, 4: P2 Trail).
+    *   `'valid_mask'`: `Box(2, 4)` representing binary validity of moves (direct opposite turns are masked out).
+    *   `'total_score'`: `Box(2,)` representing wins for P1 and P2.
+*   **Rewards**: Zero-sum outcome rewards:
+    *   `+10.0` when Player 1 wins (Player 2 crashed).
+    *   `-10.0` when Player 2 wins (Player 1 crashed).
+    *   `0.0` for a head-on collision or joint crash (draw).
+    *   `+0.01` survival reward per step for both players (net zero-sum is preserved).
+*   **Screenshots**:
+    *   *Initial State*: ![Tron Initial State](screenshots/tron_screenshot_initial.png)
+    *   *Mid-game*: ![Tron Mid-game State](screenshots/tron_screenshot_mid_game.png)
+    *   *Game Over*: ![Tron Game Over State](screenshots/tron_screenshot_game_over.png)
+
+### 3. Air Hockey (`envpack/AirHockey-v0`)
+
+A Gymnasium environment for two-player continuous 2D physics-based Air Hockey.
+
+*   **Action Space**: `Box(low=-1.0, high=1.0, shape=(2, 2))` representing:
+    *   `action[0]`: Player 1 mallet acceleration/displacement `[dx, dy]`.
+    *   `action[1]`: Player 2 mallet acceleration/displacement `[dx, dy]`.
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(12,)` representing normalized coordinates and velocities:
+        *   `[p1_x, p1_y, p1_vx, p1_vy, p2_x, p2_y, p2_vx, p2_vy, puck_x, puck_y, puck_vx, puck_vy]`.
+    *   `'total_score'`: `Box(2,)` representing goals scored.
+*   **Rewards**:
+    *   `+1.0` when Player 1 scores in Player 2's goal (and `-1.0` when Player 2 scores).
+    *   `+10.0` win bonus when Player 1 reaches 7 goals (and `-10.0` loss penalty when Player 2 reaches 7).
+*   **Screenshots**:
+    *   *Initial State*: ![Air Hockey Initial State](screenshots/air_hockey_screenshot_initial.png)
+    *   *Mid-game*: ![Air Hockey Mid-game State](screenshots/air_hockey_screenshot_mid_game.png)
+    *   *Game Over*: ![Air Hockey Game Over State](screenshots/air_hockey_screenshot_game_over.png)

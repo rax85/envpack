@@ -7,6 +7,8 @@ from envpack.envs.game_tetris.env import GymTetrisEnv
 from envpack.envs.game_sudoku.env import GymSudokuEnv
 from envpack.envs.game_raptor.env import GymRaptorEnv
 from envpack.envs.game_checkers.env import GymCheckersEnv
+from envpack.envs.game_tron.env import GymTronEnv
+from envpack.envs.game_air_hockey.env import GymAirHockeyEnv
 
 
 def save_screenshot(env, name):
@@ -120,6 +122,49 @@ def generate_checkers_screenshots():
     save_screenshot(env, "checkers_screenshot_game_over")
 
 
+def generate_tron_screenshots():
+    env = GymTronEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "tron_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    # Move forward a few steps
+    env.step(np.array([3, 2], dtype=np.int32)) # RIGHT, LEFT
+    env.step(np.array([0, 1], dtype=np.int32)) # UP, DOWN
+    save_screenshot(env, "tron_screenshot_mid_game")
+    
+    # Game Over (crash)
+    env.reset(seed=42)
+    # Force them to crash head-on
+    env._grid = np.zeros((30, 30), dtype=np.int32)
+    env._p1_pos = (15, 14)
+    env._p2_pos = (15, 16)
+    env.step(np.array([3, 2], dtype=np.int32)) # RIGHT, LEFT -> crash head-on
+    save_screenshot(env, "tron_screenshot_game_over")
+
+
+def generate_air_hockey_screenshots():
+    env = GymAirHockeyEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "air_hockey_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    # Move mallets and push puck
+    env.step(np.array([[0.5, -0.5], [-0.5, 0.5]], dtype=np.float32))
+    save_screenshot(env, "air_hockey_screenshot_mid_game")
+    
+    # Game Over
+    env.reset(seed=42)
+    env._scores = np.array([7, 2], dtype=np.int32)
+    save_screenshot(env, "air_hockey_screenshot_game_over")
+
+
 def main():
     print("Generating 2048 screenshots...")
     env_2048 = Gym2048Env()
@@ -141,6 +186,12 @@ def main():
 
     print("Generating Checkers screenshots...")
     generate_checkers_screenshots()
+
+    print("Generating Tron screenshots...")
+    generate_tron_screenshots()
+
+    print("Generating Air Hockey screenshots...")
+    generate_air_hockey_screenshots()
 
 
 if __name__ == "__main__":

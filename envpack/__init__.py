@@ -37,3 +37,15 @@ register(
     entry_point="envpack.envs.game_checkers.env:GymCheckersEnv",
     max_episode_steps=500,
 )
+
+register(
+    id="envpack/Tron-v0",
+    entry_point="envpack.envs.game_tron.env:GymTronEnv",
+    max_episode_steps=1000,
+)
+
+register(
+    id="envpack/AirHockey-v0",
+    entry_point="envpack.envs.game_air_hockey.env:GymAirHockeyEnv",
+    max_episode_steps=1000,
+)
