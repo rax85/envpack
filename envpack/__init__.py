@@ -19,3 +19,9 @@ register(
     entry_point="envpack.envs.game_tetris.env:GymTetrisEnv",
     max_episode_steps=2000,
 )
+
+register(
+    id="envpack/Sudoku-v0",
+    entry_point="envpack.envs.game_sudoku.env:GymSudokuEnv",
+    max_episode_steps=200,
+)
