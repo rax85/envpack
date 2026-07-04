@@ -327,17 +327,19 @@ class GymSnakeEnv(gym.Env):
 
         # Draw Header Texts
         draw.text(
-            (10, 10),
+            (10, HEADER_PX // 2),
             "SNAKE",
             fill=COLOR_TEXT_LIGHT,
             font=self._score_font,
+            anchor="lm",
         )
 
         draw.text(
-            (CANVAS_SIZE[0] - 100, 10),
+            (CANVAS_SIZE[0] - 10, HEADER_PX // 2),
             f"SCORE: {self.score}",
             fill=COLOR_TEXT_LIGHT,
             font=self._score_font,
+            anchor="rm",
         )
 
         # Draw Grid background cell squares
