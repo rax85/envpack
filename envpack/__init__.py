@@ -49,3 +49,9 @@ register(
     entry_point="envpack.envs.game_air_hockey.env:GymAirHockeyEnv",
     max_episode_steps=1000,
 )
+
+register(
+    id="envpack/Racing-v0",
+    entry_point="envpack.envs.game_racing.env:GymRacingEnv",
+    max_episode_steps=1000,
+)

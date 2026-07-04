@@ -42,6 +42,9 @@ env = gym.make('envpack/2048-v0')
 # To run Air Hockey
 # env = gym.make('envpack/AirHockey-v0')
 
+# To run Racing
+# env = gym.make('envpack/Racing-v0')
+
 observation, info = env.reset()
 done = False
 
@@ -232,3 +235,31 @@ A Gymnasium environment for two-player continuous 2D physics-based Air Hockey.
 | **Initial State** | ![Air Hockey Initial State](screenshots/air_hockey_screenshot_initial.png) |
 | **Mid-game** | ![Air Hockey Mid-game State](screenshots/air_hockey_screenshot_mid_game.png) |
 | **Game Over** | ![Air Hockey Game Over State](screenshots/air_hockey_screenshot_game_over.png) |
+
+### 4. Racing Duel (`envpack/Racing-v0`)
+
+A Gymnasium environment for two-player simultaneous manual-transmission car racing with procedural racetracks and realistic RWD physics.
+
+*   **Action Space**: `Dict` containing:
+    *   `'p1_steer_throttle'`: `Box(low=[-1.0, -1.0], high=[1.0, 1.0], shape=(2,), dtype=np.float32)` where `action[0]` is steering (`-1.0` Left to `1.0` Right), and `action[1]` is throttle/brake (`-1.0` Full brake to `1.0` Full throttle).
+    *   `'p1_gear'`: `Discrete(3)` gear shift selector (`0`: Hold, `1`: Shift down, `2`: Shift up).
+    *   `'p2_steer_throttle'`: `Box(low=[-1.0, -1.0], high=[1.0, 1.0], shape=(2,), dtype=np.float32)`.
+    *   `'p2_gear'`: `Discrete(3)`.
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(16,)` containing:
+        *   `[x, y, vx, vy, heading, gear, rpm, progress]` for both Player 1 and Player 2 (all normalized).
+    *   `'total_score'`: `Box(2,)` representing lap wins.
+*   **Engine & Gearbox**:
+    *   6-speed manual gearbox with real gear ratios. Torque curve peaks at 550 Nm between 1850 and 5800 RPM. Redline starts at 7200 RPM. Exceeding redline limits power and triggers overrev engine drag.
+    *   Features automated clutch-slipping launch assist below 800 RPM to prevent engine stalling.
+*   **RWD Slip Dynamics**:
+    *   Realistic lateral tire slip (Pacejka/bicycle models). High throttle inputs consume tire traction circles, causing the rear wheels to lose traction, slide sideways, and trigger oversteer drifting.
+*   **Procedural Track spline**:
+    *   Cubic spline loops are generated on reset. Going off-track (onto grass) drops the tire grip coefficient from 1.0 to 0.4 and penalizes the vehicle.
+*   **Screenshots**:
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Racing Initial State](screenshots/racing_screenshot_initial.png) |
+| **Mid-game** | ![Racing Mid-game State](screenshots/racing_screenshot_mid_game.png) |
+| **Game Over** | ![Racing Game Over State](screenshots/racing_screenshot_game_over.png) |

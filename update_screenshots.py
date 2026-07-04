@@ -9,6 +9,7 @@ from envpack.envs.game_raptor.env import GymRaptorEnv
 from envpack.envs.game_checkers.env import GymCheckersEnv
 from envpack.envs.game_tron.env import GymTronEnv
 from envpack.envs.game_air_hockey.env import GymAirHockeyEnv
+from envpack.envs.game_racing.env import GymRacingEnv
 
 
 def save_screenshot(env, name):
@@ -165,6 +166,40 @@ def generate_air_hockey_screenshots():
     save_screenshot(env, "air_hockey_screenshot_game_over")
 
 
+def generate_racing_screenshots():
+    env = GymRacingEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "racing_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    # Add skidmarks, drift, and redline to display the engine HUD and tire dynamics
+    env._p1_x = 220.0
+    env._p1_y = 120.0
+    env._p1_theta = -0.5
+    env._p1_rpm = 7100.0
+    env._p1_gear = 2
+    env._p1_skids = [(210.0, 110.0), (205.0, 108.0)]
+    env._p2_x = 260.0
+    env._p2_y = 100.0
+    env._p2_theta = 0.5
+    env._p2_rpm = 5500.0
+    env._p2_gear = 3
+    env._p2_skids = [(270.0, 90.0), (275.0, 88.0)]
+    save_screenshot(env, "racing_screenshot_mid_game")
+    
+    # Game Over
+    env.reset(seed=42)
+    env._scores = np.array([1.0, 0.0], dtype=np.float32)
+    # Project winner P1 to end spline
+    end_idx = len(env._track_spline) - 1
+    env._p1_x, env._p1_y = env._track_spline[end_idx]
+    env._p1_progress = 1.0
+    save_screenshot(env, "racing_screenshot_game_over")
+
+
 def main():
     print("Generating 2048 screenshots...")
     env_2048 = Gym2048Env()
@@ -192,6 +227,9 @@ def main():
 
     print("Generating Air Hockey screenshots...")
     generate_air_hockey_screenshots()
+
+    print("Generating Racing screenshots...")
+    generate_racing_screenshots()
 
 
 if __name__ == "__main__":
