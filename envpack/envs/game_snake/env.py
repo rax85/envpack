@@ -59,13 +59,17 @@ class GymSnakeEnv(gym.Env):
         self.grid_size = GRID_SIZE
 
         # Font setup
-        font_properties = font_manager.FontProperties(
-            family="sans-serif", weight="bold"
-        )
-        font_file = font_manager.findfont(font_properties)
-        self._font = ImageFont.truetype(font_file, 16)
-        self._score_font = ImageFont.truetype(font_file, 20)
-        self._stats_font = ImageFont.truetype(font_file, 12)
+        try:
+            font_properties = font_manager.FontProperties(
+                family="sans-serif", weight="bold"
+            )
+            font_file = font_manager.findfont(font_properties)
+            self._score_font = ImageFont.truetype(font_file, 20)
+            self._stats_font = ImageFont.truetype(font_file, 12)
+        except Exception:
+            logging.warning("Could not load system sans-serif font. Using default font.")
+            self._score_font = ImageFont.load_default()
+            self._stats_font = ImageFont.load_default()
 
         # Spaces
         n_actions = 4
@@ -73,10 +77,10 @@ class GymSnakeEnv(gym.Env):
         self.observation_space = spaces.Dict(
             {
                 "observation": spaces.Box(
-                    low=0, high=3, shape=GRID_SIZE, dtype=np.int32
+                    low=0, high=3, shape=(GRID_SIZE[1], GRID_SIZE[0]), dtype=np.int32
                 ),
                 "valid_mask": spaces.Box(
-                    low=0, high=1, shape=[n_actions], dtype=np.int32
+                    low=0, high=1, shape=(n_actions,), dtype=np.int32
                 ),
                 "total_score": spaces.Box(
                     low=0, high=1000, shape=(1,), dtype=np.int32
@@ -92,17 +96,7 @@ class GymSnakeEnv(gym.Env):
         self._background[0:HEADER_PX, :] = COLOR_HEADER
         self._background[CANVAS_SIZE[1] - FOOTER_PX:, :] = COLOR_FOOTER
 
-        # Pre-calculate cell slices for fast drawing
-        self._grid_slices = []
-        for y in range(GRID_SIZE[1]):
-            for x in range(GRID_SIZE[0]):
-                rx = x * (CELL_PX + PADDING_PX) + PADDING_PX
-                ry = y * (CELL_PX + PADDING_PX) + PADDING_PX + HEADER_PX
-                self._grid_slices.append(
-                    (slice(ry, ry + CELL_PX), slice(rx, rx + CELL_PX))
-                )
-
-        self._current_observation = self._background.copy().astype(np.float32) / 256.0
+        self._current_observation = self._background.copy()
         self.reset()
 
     def reset(
@@ -121,7 +115,7 @@ class GymSnakeEnv(gym.Env):
             self.steps_since_eating = state["steps_since_eating"]
             self.move_history = copy.deepcopy(state["move_history"])
 
-            observation, _ = self._create_observation()
+            observation = self._create_observation()
             return observation, {}
 
         # Reset snake at the center of the grid moving RIGHT
@@ -136,7 +130,7 @@ class GymSnakeEnv(gym.Env):
 
         self._spawn_food()
 
-        observation, _ = self._create_observation()
+        observation = self._create_observation()
         return observation, {}
 
     def _spawn_food(self) -> None:
@@ -149,7 +143,8 @@ class GymSnakeEnv(gym.Env):
             if (y, x) not in snake_set
         ]
         if candidates:
-            self.food = random.choice(candidates)
+            idx = self.np_random.integers(len(candidates))
+            self.food = candidates[idx]
         else:
             self.food = (-1, -1)  # Grid full (win)
 
@@ -165,6 +160,9 @@ class GymSnakeEnv(gym.Env):
         self, action: int
     ) -> Tuple[Dict[str, Any], float, bool, bool, Dict[str, Any]]:
         """Perform one step in the environment."""
+        if not (0 <= action <= 3):
+            raise ValueError(f"Invalid action: {action}")
+
         self.total_moves += 1
         self.steps_since_eating += 1
 
@@ -184,18 +182,16 @@ class GymSnakeEnv(gym.Env):
             new_head = (head_y + 1, head_x)
         elif action == LEFT:
             new_head = (head_y, head_x - 1)
-        elif action == RIGHT:
-            new_head = (head_y, head_x + 1)
         else:
-            raise ValueError(f"Invalid action: {action}")
+            new_head = (head_y, head_x + 1)
 
-        # Check for collision with boundaries or self
+        # Check for collision with boundaries or self (excluding tail segment since it will move)
         collided = (
             new_head[0] < 0
             or new_head[0] >= GRID_SIZE[1]
             or new_head[1] < 0
             or new_head[1] >= GRID_SIZE[0]
-            or new_head in self.snake
+            or new_head in self.snake[:-1]
         )
 
         terminated = False
@@ -232,7 +228,7 @@ class GymSnakeEnv(gym.Env):
         if self.steps_since_eating >= 200:
             truncated = True
 
-        observation, _ = self._create_observation()
+        observation = self._create_observation()
         return observation, float(reward), terminated, truncated, {"state": self._get_state()}
 
     def _get_state(self) -> Dict[str, Any]:
@@ -247,28 +243,25 @@ class GymSnakeEnv(gym.Env):
             "move_history": copy.deepcopy(self.move_history),
         }
 
-    def _create_observation(self) -> Tuple[Dict[str, Any], bool]:
+    def _create_observation(self) -> Dict[str, Any]:
         """Create the observation dictionary."""
-        grid = np.zeros(GRID_SIZE, dtype=np.int32)
+        grid = np.zeros((GRID_SIZE[1], GRID_SIZE[0]), dtype=np.int32)
         # Populate grid
         # 0: Empty, 1: Food, 2: Head, 3: Body
         if self.food != (-1, -1):
             grid[self.food[0], self.food[1]] = 1
-        for idx, (y, x) in enumerate(self.snake):
-            if idx == 0:
-                grid[y, x] = 2
-            else:
-                grid[y, x] = 3
+        for y, x in self.snake[1:]:
+            grid[y, x] = 3
+        if self.snake:
+            grid[self.snake[0][0], self.snake[0][1]] = 2
 
         valid_mask = self._get_valid_mask()
-        # Finished if snake died or grid is fully occupied
-        done = len(self.snake) == GRID_SIZE[0] * GRID_SIZE[1]
         
         return {
             "observation": grid,
             "valid_mask": valid_mask,
             "total_score": np.array([self.score], dtype=np.int32),
-        }, done
+        }
 
     def _draw_arrow(
         self, draw: ImageDraw.ImageDraw, x: int, y: int, action: int, color: Tuple[int, int, int]
@@ -394,12 +387,12 @@ class GymSnakeEnv(gym.Env):
             color = COLOR_HEAD if is_eaten else COLOR_TEXT_LIGHT
             self._draw_arrow(draw, arrow_x_start + i * arrow_spacing, arrow_y, action, color)
 
-        self._current_observation = np.array(canvas).astype(np.float32) / 256.0
+        self._current_observation = np.array(canvas)
 
     def render(self) -> Optional[npt.NDArray[np.uint8]]:
         """Return the current observation as an RGB array."""
         self._render()
-        return (self._current_observation * 256).astype(np.uint8)
+        return self._current_observation.copy()
 
     def close(self) -> None:
         """Close the environment."""

@@ -548,6 +548,42 @@ class TestGym2048Env(unittest.TestCase):
         self.assertNotEqual(env._score, 99999)
         self.assertNotEqual(env._grid[0, 0], 1234)
 
+    def test_rendering_extra_coverage(self):
+        """Test render edge cases: dynamic tile generation, game over screen, invalid arrow action."""
+        env = Gym2048Env()
+        env.reset()
+        
+        # 1. Dynamic tile generation for > 2048
+        env._grid[0, 0] = 4096
+        img = env.render()
+        self.assertIsNotNone(img)
+        
+        # 2. Game over screen rendering
+        env._grid = np.array([
+            [2, 4, 2, 4],
+            [4, 2, 4, 2],
+            [2, 4, 2, 4],
+            [4, 2, 4, 2]
+        ], dtype=np.int32)
+        img_go = env.render()
+        self.assertIsNotNone(img_go)
+        
+        # 3. Invalid arrow action
+        from PIL import ImageDraw, Image
+        canvas = Image.new("RGB", (100, 100))
+        draw = ImageDraw.Draw(canvas)
+        env._draw_arrow(draw, 50, 50, 99, (255, 255, 255))
+        
+        # 4. Close env
+        env.close()
+
+    def test_font_loading_fallback(self):
+        """Test that environment falls back to default font if truetype loading fails."""
+        from unittest.mock import patch
+        with patch("matplotlib.font_manager.findfont", side_effect=Exception("Font error")):
+            env = Gym2048Env()
+            self.assertIsNotNone(env._font)
+
 
 if __name__ == "__main__":
     unittest.main()

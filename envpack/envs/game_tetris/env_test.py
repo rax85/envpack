@@ -169,6 +169,198 @@ class TestGymTetrisEnv(unittest.TestCase):
         self.assertEqual(new_env._current_pos, env._current_pos)
         self.assertEqual(new_env._next_type, env._next_type)
         self.assertEqual(new_env._move_history, env._move_history)
+    def test_gymnasium_compliance(self):
+        """Test that the environment complies with Gymnasium interface requirements."""
+        from gymnasium.utils.env_checker import check_env
+        env = GymTetrisEnv()
+        check_env(env)
+
+    def test_seeding_and_determinism(self):
+        """Test that the environment is deterministic when seeded."""
+        env1 = GymTetrisEnv()
+        env2 = GymTetrisEnv()
+        obs1, _ = env1.reset(seed=42)
+        obs2, _ = env2.reset(seed=42)
+        
+        # Initial shapes and types should match
+        self.assertEqual(env1._current_type, env2._current_type)
+        self.assertEqual(env1._next_type, env2._next_type)
+        self.assertEqual(env1._current_pos, env2._current_pos)
+        np.testing.assert_array_equal(env1._board, env2._board)
+        
+        # Take a few identical actions
+        for action in [0, 1, 2, 3]:
+            obs1, r1, term1, trunc1, _ = env1.step(action)
+            obs2, r2, term2, trunc2, _ = env2.step(action)
+            self.assertEqual(r1, r2)
+            self.assertEqual(term1, term2)
+            self.assertEqual(trunc1, trunc2)
+            np.testing.assert_array_equal(obs1["observation"], obs2["observation"])
+            np.testing.assert_array_equal(obs1["valid_mask"], obs2["valid_mask"])
+            self.assertEqual(env1._next_type, env2._next_type)
+
+    def test_down_action(self):
+        """Test the DOWN action (1 step soft drop + 1 step gravity)."""
+        env = GymTetrisEnv()
+        env.reset()
+        
+        # Use O-piece
+        env._current_type = 2
+        env._current_shape = tetris_env.SHAPES[2].copy()
+        env._current_pos = (0, 4)
+        
+        # Take DOWN step
+        env.step(tetris_env.DOWN)
+        # Position should be 2 rows down (row 2)
+        self.assertEqual(env._current_pos, (2, 4))
+
+    def test_invalid_action(self):
+        """Test that an invalid action is ignored for horizontal move but gravity still applies."""
+        env = GymTetrisEnv()
+        env.reset()
+        
+        # Use O-piece at left border (col 0)
+        env._current_type = 2
+        env._current_shape = tetris_env.SHAPES[2].copy()
+        env._current_pos = (0, 0)
+        
+        # Try to move left (invalid since col is 0 and shape occupies col 0)
+        obs, reward, terminated, truncated, info = env.step(tetris_env.LEFT)
+        
+        # Position should be moved down by gravity (row 1) but col remains 0
+        self.assertEqual(env._current_pos, (1, 0))
+        # Move history should record LEFT (0) as invalid (False)
+        self.assertEqual(env._move_history[-1], (tetris_env.LEFT, False))
+
+    def test_font_loading_fallback(self):
+        """Test that environment falls back to default font if truetype loading fails."""
+        from unittest.mock import patch
+        with patch("matplotlib.font_manager.findfont", side_effect=Exception("Font error")):
+            env = GymTetrisEnv()
+            self.assertIsNotNone(env._font)
+
+    def test_rendering_and_close(self):
+        """Test rendering, arrow drawing in all directions, and close."""
+        env = GymTetrisEnv()
+        env.reset()
+        
+        # Move RIGHT, DOWN, LEFT, ROTATE, HARD_DROP to build history
+        env.step(tetris_env.RIGHT)
+        env.step(tetris_env.DOWN)
+        env.step(tetris_env.LEFT)
+        env.step(tetris_env.ROTATE)
+        env.step(tetris_env.HARD_DROP)
+        
+        # Render (this will draw LEFT, RIGHT, ROTATE, DOWN, HARD_DROP arrows)
+        img = env.render()
+        self.assertIsNotNone(img)
+
+        # Fill history to > 8 to trigger move_history.pop(0)
+        for _ in range(5):
+            env.step(tetris_env.LEFT)
+            
+        self.assertEqual(len(env._move_history), 8)
+        
+        # Invalid arrow action
+        from PIL import ImageDraw, Image
+        canvas = Image.new("RGB", (100, 100))
+        draw = ImageDraw.Draw(canvas)
+        env._draw_arrow(draw, 50, 50, 99, (255, 255, 255))
+        
+        env.close()
+
+    def test_line_clearing_and_scoring(self):
+        """Test clearing 1, 2, 3, and 4 lines and their rewards / scoring."""
+        env = GymTetrisEnv()
+        env.reset()
+        
+        # 1 Line clear
+        env._board = np.zeros(tetris_env.GRID_SIZE, dtype=np.int32)
+        env._board[19, :] = 1
+        env._current_pos = (18, 4)
+        env._current_shape = np.array([[1]], dtype=np.int32)
+        cleared, game_over = env._lock_and_update()
+        self.assertEqual(cleared, 1)
+        self.assertEqual(env._score, 100)
+        self.assertEqual(env._get_line_reward(1), 0.1)
+        
+        # 2 Lines clear
+        env._score = 0
+        env._board = np.zeros(tetris_env.GRID_SIZE, dtype=np.int32)
+        env._board[18, :] = 1
+        env._board[19, :] = 1
+        env._current_pos = (17, 4)
+        env._current_shape = np.array([[1]], dtype=np.int32)
+        cleared, game_over = env._lock_and_update()
+        self.assertEqual(cleared, 2)
+        self.assertEqual(env._score, 300)
+        self.assertEqual(env._get_line_reward(2), 0.3)
+
+        # 3 Lines clear
+        env._score = 0
+        env._board = np.zeros(tetris_env.GRID_SIZE, dtype=np.int32)
+        env._board[17, :] = 1
+        env._board[18, :] = 1
+        env._board[19, :] = 1
+        env._current_pos = (16, 4)
+        env._current_shape = np.array([[1]], dtype=np.int32)
+        cleared, game_over = env._lock_and_update()
+        self.assertEqual(cleared, 3)
+        self.assertEqual(env._score, 500)
+        self.assertEqual(env._get_line_reward(3), 0.5)
+
+        # 4 Lines clear
+        env._score = 0
+        env._board = np.zeros(tetris_env.GRID_SIZE, dtype=np.int32)
+        env._board[16, :] = 1
+        env._board[17, :] = 1
+        env._board[18, :] = 1
+        env._board[19, :] = 1
+        env._current_pos = (15, 4)
+        env._current_shape = np.array([[1]], dtype=np.int32)
+        cleared, game_over = env._lock_and_update()
+        self.assertEqual(cleared, 4)
+        self.assertEqual(env._score, 800)
+        self.assertEqual(env._get_line_reward(4), 1.0)
+        
+        # 0 Lines clear reward
+        self.assertEqual(env._get_line_reward(0), 0.0)
+
+    def test_game_over_conditions(self):
+        """Test game over condition when board is full and new piece cannot spawn."""
+        env = GymTetrisEnv()
+        env.reset()
+        
+        # Spawn piece failure
+        env._board = np.zeros(tetris_env.GRID_SIZE, dtype=np.int32)
+        env._board[0:3, :] = 1
+        self.assertFalse(env._spawn_piece())
+        
+        # Lock and update triggers spawn_piece failure
+        env._board = np.zeros(tetris_env.GRID_SIZE, dtype=np.int32)
+        env._board[0:3, 1:] = 1  # Leave column 0 empty so the rows are not cleared
+        env._current_pos = (19, 4)
+        env._current_shape = np.array([[1]], dtype=np.int32)
+        cleared, game_over = env._lock_and_update()
+        self.assertTrue(game_over)
+        
+        # Test step collision check on gravity step triggering game over
+        env = GymTetrisEnv()
+        env.reset()
+        env._board[1:4, 1:] = 1  # Leave col 0 empty so it won't be cleared
+        env._current_pos = (0, 4)
+        obs, reward, terminated, truncated, info = env.step(tetris_env.DOWN)
+        self.assertTrue(terminated)
+        self.assertEqual(reward, -1.0)
+        
+        # Test step collision check on hard drop triggering game over
+        env = GymTetrisEnv()
+        env.reset()
+        env._board[1:4, 1:] = 1  # Leave col 0 empty so it won't be cleared
+        env._current_pos = (0, 4)
+        obs, reward, terminated, truncated, info = env.step(tetris_env.HARD_DROP)
+        self.assertTrue(terminated)
+        self.assertEqual(reward, -1.0)
 
 
 if __name__ == "__main__":

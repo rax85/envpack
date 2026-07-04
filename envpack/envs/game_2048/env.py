@@ -187,16 +187,24 @@ class Gym2048Env(gym.Env):
     def __init__(self, render_mode: Optional[str] = None) -> None:
         super().__init__()
         self.render_mode = render_mode
-        font_properties = font_manager.FontProperties(
-            family="sans-serif", weight="bold"
-        )
-        font_file = font_manager.findfont(font_properties)
-        logging.info("Loading font from %s", font_file)
-        self._font = ImageFont.truetype(font_file, 24)
-        self._score_label_font = ImageFont.truetype(font_file, 16)
-        self._score_font = ImageFont.truetype(font_file, 24)
-        self._stats_font = ImageFont.truetype(font_file, 12)
-        self._game_over_font = ImageFont.truetype(font_file, 20)
+        try:
+            font_properties = font_manager.FontProperties(
+                family="sans-serif", weight="bold"
+            )
+            font_file = font_manager.findfont(font_properties)
+            logging.info("Loading font from %s", font_file)
+            self._font = ImageFont.truetype(font_file, 24)
+            self._score_label_font = ImageFont.truetype(font_file, 16)
+            self._score_font = ImageFont.truetype(font_file, 24)
+            self._stats_font = ImageFont.truetype(font_file, 12)
+            self._game_over_font = ImageFont.truetype(font_file, 20)
+        except Exception:
+            logging.warning("Failed to load truetype font, falling back to default.")
+            self._font = ImageFont.load_default()
+            self._score_label_font = ImageFont.load_default()
+            self._score_font = ImageFont.load_default()
+            self._stats_font = ImageFont.load_default()
+            self._game_over_font = ImageFont.load_default()
 
         self._render_cache = {}
         for val in RECT_COLORS:
@@ -210,7 +218,7 @@ class Gym2048Env(gym.Env):
                     low=0, high=2**31 - 1, shape=GRID_SIZE, dtype=np.int32
                 ),
                 "valid_mask": spaces.Box(
-                    low=0, high=1, shape=[n_actions], dtype=np.int32
+                    low=0, high=1, shape=(n_actions,), dtype=np.int32
                 ),
                 "total_score": spaces.Box(
                     low=0, high=2**31 - 1, shape=(1,), dtype=np.int32
@@ -233,11 +241,8 @@ class Gym2048Env(gym.Env):
             (y, x) for y in range(GRID_SIZE[0]) for x in range(GRID_SIZE[1])
         ]
 
-        self._background = (
-            np.full(
-                (CANVAS_SIZE[1], CANVAS_SIZE[0], 3), BACKGROUND_COLOR, dtype=np.uint8
-            ).astype(np.float32)
-            / 256.0
+        self._background = np.full(
+            (CANVAS_SIZE[1], CANVAS_SIZE[0], 3), BACKGROUND_COLOR, dtype=np.uint8
         )
         self._current_observation = self._background.copy()
         self.reset()
@@ -316,13 +321,14 @@ class Gym2048Env(gym.Env):
         """Spawn a new tile at a random empty position."""
         candidates = [pos for pos in self._all_positions if self._grid[pos] == 0]
         if len(candidates) > 0:
-            y, x = random.choice(candidates)
-            self._grid[y, x] = random.choice([2, 4])
+            idx = self.np_random.integers(len(candidates))
+            y, x = candidates[idx]
+            self._grid[y, x] = self.np_random.choice([2, 4])
         return len(candidates) == 0
 
     def _generate_tile(self, val: int) -> None:
         """Generate the image for a tile value."""
-        color = RECT_COLORS[val]
+        color = RECT_COLORS.get(val, (237, 194, 46))
         img = Image.new("RGB", (SQUARE_PX, SQUARE_PX), color=color)
         draw = ImageDraw.Draw(img)
         if val > 0:
@@ -335,7 +341,7 @@ class Gym2048Env(gym.Env):
                 font=self._font,
                 anchor="mm",
             )
-        self._render_cache[val] = np.array(img).astype(np.float32) / 256.0
+        self._render_cache[val] = np.array(img)
 
     def _draw_arrow(
         self, draw: ImageDraw.ImageDraw, x: int, y: int, action: int, color: Tuple[int, int, int]
@@ -451,10 +457,11 @@ class Gym2048Env(gym.Env):
         )
 
         # Paste header
-        header_arr = np.array(header).astype(np.float32) / 256.0
-        self._current_observation[0:HEADER_PX, :] = header_arr
+        self._current_observation[0:HEADER_PX, :] = np.array(header)
 
         for val, (s_y, s_x) in zip(self._grid.flat, self._grid_slices):
+            if val not in self._render_cache:
+                self._generate_tile(val)
             self._current_observation[s_y, s_x] = self._render_cache[val]
 
         # Draw Footer
@@ -493,8 +500,7 @@ class Gym2048Env(gym.Env):
             color = VALID_COLOR if is_valid else INVALID_COLOR
             self._draw_arrow(draw_footer, arrow_x_start + i * arrow_spacing, arrow_y, action, color)
 
-        footer_arr = np.array(footer).astype(np.float32) / 256.0
-        self._current_observation[footer_y_start:, :] = footer_arr
+        self._current_observation[footer_y_start:, :] = np.array(footer)
 
     def _create_observation(
         self, valid_moves: Optional[npt.NDArray[np.int32]] = None
@@ -512,7 +518,7 @@ class Gym2048Env(gym.Env):
     def render(self) -> Optional[npt.NDArray[np.uint8]]:
         """Return the current observation as an RGB array."""
         self._render()
-        return (self._current_observation * 256).astype(np.uint8)
+        return self._current_observation.copy()
 
     def _pack(self, a: npt.ArrayLike) -> Tuple[npt.NDArray[np.int32], int]:
         """Pack a row or column."""

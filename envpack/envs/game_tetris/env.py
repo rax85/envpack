@@ -98,13 +98,18 @@ class GymTetrisEnv(gym.Env):
         self.render_mode = render_mode
 
         # Font setup
-        font_properties = font_manager.FontProperties(
-            family="sans-serif", weight="bold"
-        )
-        font_file = font_manager.findfont(font_properties)
-        self._font = ImageFont.truetype(font_file, 14)
-        self._score_font = ImageFont.truetype(font_file, 16)
-        self._stats_font = ImageFont.truetype(font_file, 11)
+        try:
+            font_properties = font_manager.FontProperties(
+                family="sans-serif", weight="bold"
+            )
+            font_file = font_manager.findfont(font_properties)
+            self._font = ImageFont.truetype(font_file, 14)
+            self._score_font = ImageFont.truetype(font_file, 16)
+            self._stats_font = ImageFont.truetype(font_file, 11)
+        except Exception:
+            self._font = ImageFont.load_default()
+            self._score_font = ImageFont.load_default()
+            self._stats_font = ImageFont.load_default()
 
         # Spaces
         n_actions = 5
@@ -150,7 +155,7 @@ class GymTetrisEnv(gym.Env):
             self._next_type = state["next_type"]
             self._move_history = copy.deepcopy(state["move_history"])
 
-            observation, _ = self._create_observation()
+            observation = self._create_observation()
             return observation, {}
 
         self._board = np.zeros(GRID_SIZE, dtype=np.int32)
@@ -160,10 +165,10 @@ class GymTetrisEnv(gym.Env):
         self._move_history: List[Tuple[int, bool]] = []
 
         # Spawn initial piece and preview piece
-        self._next_type = random.choice(list(SHAPES.keys()))
+        self._next_type = int(self.np_random.choice(list(SHAPES.keys())))
         self._spawn_piece()
 
-        observation, _ = self._create_observation()
+        observation = self._create_observation()
         return observation, {}
 
     def _spawn_piece(self) -> bool:
@@ -176,7 +181,7 @@ class GymTetrisEnv(gym.Env):
         self._current_pos = (0, start_x)
 
         # Set next piece type
-        self._next_type = random.choice(list(SHAPES.keys()))
+        self._next_type = int(self.np_random.choice(list(SHAPES.keys())))
 
         # Check if spawned piece collides immediately
         if self._check_collision(self._board, self._current_shape, self._current_pos):
@@ -282,7 +287,7 @@ class GymTetrisEnv(gym.Env):
                 self._current_pos = pos_gravity
 
         truncated = False
-        observation, _ = self._create_observation()
+        observation = self._create_observation()
         return observation, float(reward), terminated, truncated, {"state": self._get_state()}
 
     def _get_line_reward(self, lines: int) -> float:
@@ -349,7 +354,7 @@ class GymTetrisEnv(gym.Env):
             "move_history": copy.deepcopy(self._move_history),
         }
 
-    def _create_observation(self) -> Tuple[Dict[str, Any], bool]:
+    def _create_observation(self) -> Dict[str, Any]:
         """Create the observation dictionary."""
         grid = self._board.copy()
         
@@ -363,13 +368,12 @@ class GymTetrisEnv(gym.Env):
                         grid[by, bx] = 8
 
         valid_mask = self._get_valid_mask()
-        done = not self._check_collision(self._board, self._current_shape, self._current_pos)
         
         return {
             "observation": grid,
             "valid_mask": valid_mask,
             "total_score": np.array([self._score], dtype=np.int32),
-        }, not done
+        }
 
     def _draw_arrow(
         self, draw: ImageDraw.ImageDraw, x: int, y: int, action: int, color: Tuple[int, int, int]
@@ -507,12 +511,12 @@ class GymTetrisEnv(gym.Env):
             color = (46, 204, 113) if is_valid else (231, 76, 60)
             self._draw_arrow(draw, arrow_x_start + i * arrow_spacing, arrow_y, action, color)
 
-        self._current_observation = np.array(canvas).astype(np.float32) / 256.0
+        self._current_observation = np.array(canvas, dtype=np.uint8)
 
     def render(self) -> Optional[npt.NDArray[np.uint8]]:
         """Return the current observation as an RGB array."""
         self._render()
-        return (self._current_observation * 256).astype(np.uint8)
+        return self._current_observation
 
     def close(self) -> None:
         """Close the environment."""
