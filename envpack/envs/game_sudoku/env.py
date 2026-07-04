@@ -30,7 +30,7 @@ COLOR_BOX_BORDER = (180, 180, 180) # Thick 3x3 borders
 COLOR_CELL_BG = (45, 45, 45)
 COLOR_GIVEN_TEXT = (236, 240, 241)     # Given/fixed numbers (White)
 COLOR_CORRECT_TEXT = (46, 204, 113)    # Correctly placed (Green)
-COLOR_CONFLICT_TEXT = (231, 76, 60)    # Violates constraint (Red)
+COLOR_CONFLICT_TEXT = (255, 107, 107)  # Violates constraint (Red, increased contrast for WCAG AA compliance)
 COLOR_INCORRECT_TEXT = (241, 196, 15)  # Incorrect but non-conflicting (Yellow)
 COLOR_HEADER = (52, 73, 94)
 COLOR_FOOTER = (44, 62, 80)
@@ -63,9 +63,14 @@ class GymSudokuEnv(gym.Env):
             self._stats_font = ImageFont.truetype(font_file, 12)
         except Exception:
             logging.warning("Could not load system sans-serif font. Using default font.")
-            self._cell_font = ImageFont.load_default()
-            self._score_font = ImageFont.load_default()
-            self._stats_font = ImageFont.load_default()
+            try:
+                self._cell_font = ImageFont.load_default(size=22)
+                self._score_font = ImageFont.load_default(size=20)
+                self._stats_font = ImageFont.load_default(size=12)
+            except TypeError:
+                self._cell_font = ImageFont.load_default()
+                self._score_font = ImageFont.load_default()
+                self._stats_font = ImageFont.load_default()
 
         # Spaces
         # Action space: MultiDiscrete([9, 9, 10]) representing [row, col, value]
@@ -146,20 +151,22 @@ class GymSudokuEnv(gym.Env):
                 return False
             return True
 
-        # Backtracking solver to fill the rest of the board
-        def fill(grid: npt.NDArray[np.int32]) -> bool:
-            for r in range(9):
-                for c in range(9):
-                    if grid[r, c] == 0:
-                        vals = self.np_random.permutation(np.arange(1, 10))
-                        for val in vals:
-                            if is_valid_gen(grid, r, c, val):
-                                grid[r, c] = val
-                                if fill(grid):
-                                    return True
-                                grid[r, c] = 0
-                        return False
-            return True
+        # Optimized linear backtracking solver to fill the rest of the board
+        def fill(grid: npt.NDArray[np.int32], cell_idx: int = 0) -> bool:
+            if cell_idx == 81:
+                return True
+            r, c = cell_idx // 9, cell_idx % 9
+            if grid[r, c] != 0:
+                return fill(grid, cell_idx + 1)
+            
+            vals = self.np_random.permutation(np.arange(1, 10))
+            for val in vals:
+                if is_valid_gen(grid, r, c, val):
+                    grid[r, c] = val
+                    if fill(grid, cell_idx + 1):
+                        return True
+                    grid[r, c] = 0
+            return False
 
         fill(solved)
         self._solved_grid = solved
@@ -188,33 +195,33 @@ class GymSudokuEnv(gym.Env):
         """Checks if placing val at (r, c) violates Sudoku row, col, or block constraints."""
         if val == 0:
             return False
-        # Row check (excluding cell itself)
-        if np.sum(self._grid[r, :] == val) - (1 if self._grid[r, c] == val else 0) > 0:
-            return True
-        # Col check
-        if np.sum(self._grid[:, c] == val) - (1 if self._grid[r, c] == val else 0) > 0:
-            return True
-        # 3x3 block check
-        br, bc = 3 * (r // 3), 3 * (c // 3)
-        block = self._grid[br:br+3, bc:bc+3]
-        if np.sum(block == val) - (1 if self._grid[r, c] == val else 0) > 0:
-            return True
-        return False
+        return self._has_conflict_static(self._grid, r, c, val)
 
     def _get_valid_mask(self) -> npt.NDArray[np.int8]:
-        """Compute values mask of shape (9, 9, 10)."""
+        """Compute values mask of shape (9, 9, 10) efficiently."""
         mask = np.zeros((9, 9, 10), dtype=np.int8)
+        row_occupied = np.zeros((9, 10), dtype=bool)
+        col_occupied = np.zeros((9, 10), dtype=bool)
+        block_occupied = np.zeros((9, 10), dtype=bool)
+        
+        for r in range(9):
+            for c in range(9):
+                val = self._grid[r, c]
+                if val != 0:
+                    row_occupied[r, val] = True
+                    col_occupied[c, val] = True
+                    b = 3 * (r // 3) + (c // 3)
+                    block_occupied[b, val] = True
+                    
         for r in range(9):
             for c in range(9):
                 if self._given_mask[r, c] == 1:
-                    continue  # Given cells cannot be edited (all values mask = 0)
-                
+                    continue
                 mask[r, c, 0] = 1  # Clearing/delete is always allowed
-                
-                # Check each value 1..9
+                b = 3 * (r // 3) + (c // 3)
+                curr_val = self._grid[r, c]
                 for v in range(1, 10):
-                    # Check constraint violation
-                    if not self._has_conflict_static(self._grid, r, c, v):
+                    if (not row_occupied[r, v] and not col_occupied[c, v] and not block_occupied[b, v]) or v == curr_val:
                         mask[r, c, v] = 1
         return mask
 
@@ -252,11 +259,7 @@ class GymSudokuEnv(gym.Env):
             self._invalid_moves += 1
             self._move_history.append(((r, c, val), False))
         else:
-            # Check if this move violates constraints (before applying to history)
-            conflict_before = self._has_conflict(r, c, val)
-            
             # Apply move
-            old_val = self._grid[r, c]
             self._grid[r, c] = val
             
             new_score = self._calculate_score()
@@ -276,7 +279,20 @@ class GymSudokuEnv(gym.Env):
         if len(self._move_history) > 8:
             self._move_history.pop(0)
 
-        terminated = self._score == 81
+        # Completion criteria: terminate if grid has no empty cells and no conflicts
+        # This resolves the multiple solutions issue
+        is_full = np.sum(self._grid == 0) == 0
+        has_any_conflict = False
+        if is_full:
+            for row in range(9):
+                for col in range(9):
+                    if self._has_conflict(row, col, self._grid[row, col]):
+                        has_any_conflict = True
+                        break
+                if has_any_conflict:
+                    break
+        
+        terminated = is_full and not has_any_conflict
         if terminated:
             reward += 10.0  # Big bonus for solving the puzzle!
 
@@ -376,38 +392,46 @@ class GymSudokuEnv(gym.Env):
                         anchor="mm",
                     )
 
-        # Highlight 3x3 block borders
+        # Highlight 3x3 block borders (making outer borders thick too for cleaner aesthetics)
         for i in range(4):
             # Vertical thick borders
             vx = PADDING_PX + i * 3 * CELL_PX
             draw.line(
                 [(vx, HEADER_PX + PADDING_PX), (vx, HEADER_PX + PADDING_PX + 9 * CELL_PX)],
                 fill=COLOR_BOX_BORDER,
-                width=3 if 0 < i < 3 else 1,
+                width=3,
             )
             # Horizontal thick borders
             hy = HEADER_PX + PADDING_PX + i * 3 * CELL_PX
             draw.line(
                 [(PADDING_PX, hy), (PADDING_PX + 9 * CELL_PX, hy)],
                 fill=COLOR_BOX_BORDER,
-                width=3 if 0 < i < 3 else 1,
+                width=3,
             )
 
-        # Draw Footer Statistics
+        # Draw Footer Statistics (vertically centered using anchor="lm" for perfect alignment)
         stats_text = f"Moves: {self._total_moves}  Invalid: {self._invalid_moves}"
         draw.text(
-            (PADDING_PX + 5, CANVAS_SIZE[1] - FOOTER_PX + 12),
+            (PADDING_PX + 5, CANVAS_SIZE[1] - FOOTER_PX // 2),
             stats_text,
             fill=COLOR_TEXT_LIGHT,
             font=self._stats_font,
+            anchor="lm",
         )
 
-        # Draw move history
+        # Draw move history (displays last 4 moves with arrow indicators to fit canvas bounds)
         arrow_y = CANVAS_SIZE[1] - FOOTER_PX // 2
-        arrow_x_start = CANVAS_SIZE[0] - 250
-        arrow_spacing = 60
-        for i, (action, is_valid) in enumerate(self._move_history):
-            self._draw_symbol(draw, arrow_x_start + i * arrow_spacing, arrow_y, action, is_valid)
+        visible_history = self._move_history[-4:]
+        if visible_history:
+            x_pos = CANVAS_SIZE[0] - 250
+            draw.text((x_pos, arrow_y), "History: ", fill=(150, 150, 150), font=self._stats_font, anchor="lm")
+            x_pos += 45
+            for idx, (action, is_valid) in enumerate(visible_history):
+                self._draw_symbol(draw, x_pos, arrow_y, action, is_valid)
+                x_pos += 38
+                if idx < len(visible_history) - 1:
+                    draw.text((x_pos, arrow_y), "→", fill=(100, 100, 100), font=self._stats_font, anchor="lm")
+                    x_pos += 12
 
         self._current_observation = np.array(canvas, dtype=np.uint8)
 

@@ -142,6 +142,21 @@ class TestGymSudokuEnv(unittest.TestCase):
             env = GymSudokuEnv()
             self.assertIsNotNone(env._cell_font)
 
+    def test_font_loading_fallback_old_pillow(self):
+        """Test that environment falls back to default font if Pillow does not support size argument."""
+        from unittest.mock import patch
+        
+        orig_load_default = sudoku_env.ImageFont.load_default
+        def mock_load_default(*args, **kwargs):
+            if kwargs or args:
+                raise TypeError("load_default() takes no arguments")
+            return orig_load_default()
+            
+        with patch("matplotlib.font_manager.findfont", side_effect=Exception("Font error")), \
+             patch("envpack.envs.game_sudoku.env.ImageFont.load_default", side_effect=mock_load_default):
+            env = GymSudokuEnv()
+            self.assertIsNotNone(env._cell_font)
+
     def test_invalid_action_value_error(self):
         """Test that invalid action values raise ValueError."""
         env = GymSudokuEnv()
@@ -188,14 +203,31 @@ class TestGymSudokuEnv(unittest.TestCase):
         env = GymSudokuEnv(clues=80) # Only 1 empty cell
         env.reset(seed=42)
         
+        # Cover _has_conflict with val=0
+        self.assertFalse(env._has_conflict(0, 0, 0))
+
         edit_r, edit_c = np.argwhere(env._given_mask == 0)[0]
         correct_val = env._solved_grid[edit_r, edit_c]
         
         obs, reward, terminated, truncated, info = env.step(np.array([edit_r, edit_c, correct_val], dtype=np.int32))
         
         self.assertTrue(terminated)
-        self.assertEqual(env._score, 81)
         self.assertGreaterEqual(reward, 10.0) # Completion bonus
+
+    def test_full_board_with_conflicts(self):
+        """Test that a full board with conflicts does not terminate and doesn't get completion bonus."""
+        env = GymSudokuEnv()
+        env.reset()
+        
+        # Manually fill grid with conflicts (all 1s)
+        env._grid = np.ones((9, 9), dtype=np.int32)
+        env._given_mask = np.zeros((9, 9), dtype=np.int8)
+        
+        # Step to trigger check
+        obs, reward, terminated, truncated, info = env.step(np.array([0, 0, 1], dtype=np.int32))
+        
+        self.assertFalse(terminated)
+        self.assertLess(reward, 0.0)
 
     def test_state_saving_and_restoring(self):
         """Test that state saving and restoring works correctly."""
