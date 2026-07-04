@@ -31,3 +31,9 @@ register(
     entry_point="envpack.envs.game_raptor.env:GymRaptorEnv",
     max_episode_steps=1000,
 )
+
+register(
+    id="envpack/Checkers-v0",
+    entry_point="envpack.envs.game_checkers.env:GymCheckersEnv",
+    max_episode_steps=500,
+)

@@ -6,6 +6,7 @@ from envpack.envs.game_snake.env import GymSnakeEnv
 from envpack.envs.game_tetris.env import GymTetrisEnv
 from envpack.envs.game_sudoku.env import GymSudokuEnv
 from envpack.envs.game_raptor.env import GymRaptorEnv
+from envpack.envs.game_checkers.env import GymCheckersEnv
 
 
 def save_screenshot(env, name):
@@ -96,6 +97,29 @@ def generate_raptor_screenshots():
     save_screenshot(env, "raptor_screenshot_game_over")
 
 
+def generate_checkers_screenshots():
+    env = GymCheckersEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "checkers_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    env.step(np.array([5, 0, 4, 1], dtype=np.int32))
+    env.step(np.array([2, 1, 3, 0], dtype=np.int32))
+    env._grid[0, 1] = 2 # P1_KING
+    save_screenshot(env, "checkers_screenshot_mid_game")
+    
+    # Game Over (win state)
+    env.reset(seed=42)
+    env._grid = np.zeros((8, 8), dtype=np.int32)
+    env._grid[4, 4] = 1 # P1_NORMAL
+    env._grid[3, 3] = 3 # P2_NORMAL
+    env.step(np.array([4, 4, 2, 2], dtype=np.int32)) # P1 captures P2, P2 pieces count = 0 -> P1 wins!
+    save_screenshot(env, "checkers_screenshot_game_over")
+
+
 def main():
     print("Generating 2048 screenshots...")
     env_2048 = Gym2048Env()
@@ -114,6 +138,9 @@ def main():
 
     print("Generating Raptor screenshots...")
     generate_raptor_screenshots()
+
+    print("Generating Checkers screenshots...")
+    generate_checkers_screenshots()
 
 
 if __name__ == "__main__":

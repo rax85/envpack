@@ -33,6 +33,9 @@ env = gym.make('envpack/2048-v0')
 # To run Raptor
 # env = gym.make('envpack/Raptor-v0')
 
+# To run Checkers
+# env = gym.make('envpack/Checkers-v0')
+
 observation, info = env.reset()
 done = False
 
@@ -47,6 +50,8 @@ env.close()
 ---
 
 ## Game Environments
+
+## 👤 Single Player Games
 
 ### 1. 2048 (`envpack/2048-v0`)
 
@@ -131,3 +136,29 @@ A Gymnasium environment for a classic vertical scrolling shooter game inspired b
     *   *Initial State*: ![Raptor Initial State](screenshots/raptor_screenshot_initial.png)
     *   *Mid-game*: ![Raptor Mid-game State](screenshots/raptor_screenshot_mid_game.png)
     *   *Game Over*: ![Raptor Game Over State](screenshots/raptor_screenshot_game_over.png)
+
+---
+
+## 👥 Two Player Games
+
+### 1. Checkers (`envpack/Checkers-v0`)
+
+A Gymnasium environment for two-player American Checkers (Draughts) played on an 8x8 checkerboard.
+
+*   **Action Space**: `MultiDiscrete([8, 8, 8, 8])`:
+    *   `[from_row, from_col, to_row, to_col]` representing starting and landing squares.
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(8, 8)` representing the board (0: empty, 1: P1 normal, 2: P1 king, 3: P2 normal, 4: P2 king).
+    *   `'valid_mask'`: `Box(8, 8, 8, 8)` representing binary validity of moves.
+    *   `'current_player'`: `Discrete(3)` (1 or 2).
+*   **Rewards**: Zero-sum rewards from **Player 1's perspective**:
+    *   `+1.0` when Player 1 captures a Player 2 piece (and `-1.0` when Player 2 captures).
+    *   `+0.5` when Player 1 promotes a piece to King (and `-0.5` when Player 2 promotes).
+    *   `+10.0` when Player 1 wins the game (and `-10.0` when Player 2 wins).
+    *   Invalid action attempts yield `-0.1` penalty, and steps have a small `-0.01` penalty.
+*   **Stalemate & Multi-jumps**:
+    *   Standard American Checkers rules apply: jump captures are mandatory. If a multi-jump is available, the active jumper piece must continue jumping and the turn does not switch.
+*   **Screenshots**:
+    *   *Initial State*: ![Checkers Initial State](screenshots/checkers_screenshot_initial.png)
+    *   *Mid-game*: ![Checkers Mid-game State](screenshots/checkers_screenshot_mid_game.png)
+    *   *Game Over*: ![Checkers Game Over State](screenshots/checkers_screenshot_game_over.png)
