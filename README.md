@@ -1,15 +1,8 @@
 # envpack
 
-A collection of game environments for Gymnasium. Currently includes the game 2048.
+A collection of classic game environments for Gymnasium.
 
-[![Python package](https://github.com/rax85/gym_2048/actions/workflows/python-package.yml/badge.svg)](https://github.com/rax85/gym_2048/actions/workflows/python-package.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
-
-## Description
-
-This package implements classic games as Gymnasium environments. Currently, it supports:
-1. **2048**: Played on a 4x4 grid. The goal is to slide tiles on the grid to combine tiles of the same value and create a tile with the value 2048.
 
 ## Installation
 
@@ -21,56 +14,59 @@ pip install git+https://github.com/rax85/envpack.git
 
 ## Usage
 
-To use the environment, you can use the following code:
-
 ```python
 import gymnasium as gym
 import envpack
 
+# To run 2048
 env = gym.make('envpack/2048-v0')
+
+# To run Snake
+# env = gym.make('envpack/Snake-v0')
 
 observation, info = env.reset()
 done = False
 
 while not done:
-    action = env.action_space.sample()  # your agent here (this takes random actions)
+    action = env.action_space.sample()  # Take a random action
     observation, reward, terminated, truncated, info = env.step(action)
     done = terminated or truncated
 
 env.close()
 ```
 
-## Action Space
+---
 
-The action space is a `Discrete(4)` space, where the actions are:
+## Game Environments
 
-*   `0`: Up
-*   `1`: Down
-*   `2`: Left
-*   `3`: Right
+### 1. 2048 (`envpack/2048-v0`)
 
-## Observation Space
+A Gymnasium environment for the classic 2048 tile-merging game played on a 4x4 grid.
 
-The observation space is a `Dict` with three keys:
+*   **Action Space**: `Discrete(4)`:
+    *   `0`: Up, `1`: Down, `2`: Left, `3`: Right
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(4, 4)` representing tile values.
+    *   `'valid_mask'`: `Box(4,)` binary mask of valid moves.
+    *   `'total_score'`: `Box(1,)` representing the accumulated score.
+*   **Rewards**: Sum of merged tile values. Invalid moves yield `-32`.
+*   **Screenshots**:
+    *   *Initial State*: ![2048 Initial State](screenshot_initial.png)
+    *   *Mid-game*: ![2048 Mid-game State](screenshot_mid_game.png)
+    *   *Game Over*: ![2048 Game Over State](screenshot_game_over.png)
 
-*   `'observation'`: A `Box` of shape `(4, 4)` representing the integer values of the game board.
-*   `'valid_mask'`: A `Box` of shape `(4,)` representing a binary mask of valid actions.
-*   `'total_score'`: A `Box` of shape `(1,)` representing the total score of the game.
+### 2. Snake (`envpack/Snake-v0`)
 
-## Rewards
+A Gymnasium environment for the classic Snake game played on a 10x10 grid.
 
-The reward is the sum of the values of the merged tiles in a step. If an invalid move is made, the reward is -32.
-
-## Screenshots
-
-### Initial State
-
-![Initial State](screenshot_initial.png)
-
-### Mid-game State
-
-![Mid-game State](screenshot_mid_game.png)
-
-### Game Over State
-
-![Game Over State](screenshot_game_over.png)
+*   **Action Space**: `Discrete(4)`:
+    *   `0`: Up, `1`: Down, `2`: Left, `3`: Right
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(10, 10)` representing the board (0: empty, 1: food, 2: snake head, 3: snake body).
+    *   `'valid_mask'`: `Box(4,)` binary mask of valid moves (direct backward folding is masked out).
+    *   `'total_score'`: `Box(1,)` representing the number of food items eaten.
+*   **Rewards**: `+1.0` for eating food, `-0.01` step penalty, and `-1.0` for wall/self collision.
+*   **Screenshots**:
+    *   *Initial State*: ![Snake Initial State](snake_screenshot_initial.png)
+    *   *Mid-game*: ![Snake Mid-game State](snake_screenshot_mid_game.png)
+    *   *Game Over*: ![Snake Game Over State](snake_screenshot_game_over.png)

@@ -7,3 +7,9 @@ register(
     entry_point="envpack.envs.game_2048.env:Gym2048Env",
     max_episode_steps=300,
 )
+
+register(
+    id="envpack/Snake-v0",
+    entry_point="envpack.envs.game_snake.env:GymSnakeEnv",
+    max_episode_steps=1000,
+)

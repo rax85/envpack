@@ -2,6 +2,7 @@ import os
 import numpy as np
 from PIL import Image
 from envpack.envs.game_2048.env import Gym2048Env
+from envpack.envs.game_snake.env import GymSnakeEnv
 import random
 
 
@@ -12,25 +13,21 @@ def save_screenshot(env, name):
     print(f"Saved {name}.png")
 
 
-def main():
-    env = Gym2048Env()
-
+def generate_game_screenshots(env, name_prefix):
     # Initial
     env.reset(seed=42)
-    save_screenshot(env, "screenshot_initial")
+    save_screenshot(env, f"{name_prefix}_initial")
 
     # Mid Game
-    # Play some steps
-    # Seed random for reproducibility
     env.action_space.seed(42)
-
-    for _ in range(50):  # 50 steps for mid game
+    for _ in range(50):
         action = env.action_space.sample()
-        env.step(action)
-    save_screenshot(env, "screenshot_mid_game")
+        _, _, done, truncated, _ = env.step(action)
+        if done or truncated:
+            env.reset()
+    save_screenshot(env, f"{name_prefix}_mid_game")
 
     # Game Over
-    # Play until done
     done = False
     truncated = False
     max_steps = 10000
@@ -39,9 +36,17 @@ def main():
         action = env.action_space.sample()
         obs, reward, done, truncated, info = env.step(action)
         steps += 1
+    save_screenshot(env, f"{name_prefix}_game_over")
 
-    print(f"Game over after {steps} additional steps.")
-    save_screenshot(env, "screenshot_game_over")
+
+def main():
+    print("Generating 2048 screenshots...")
+    env_2048 = Gym2048Env()
+    generate_game_screenshots(env_2048, "screenshot")
+
+    print("Generating Snake screenshots...")
+    env_snake = GymSnakeEnv()
+    generate_game_screenshots(env_snake, "snake_screenshot")
 
 
 if __name__ == "__main__":
