@@ -70,3 +70,19 @@ A Gymnasium environment for the classic Snake game played on a 10x10 grid.
     *   *Initial State*: ![Snake Initial State](snake_screenshot_initial.png)
     *   *Mid-game*: ![Snake Mid-game State](snake_screenshot_mid_game.png)
     *   *Game Over*: ![Snake Game Over State](snake_screenshot_game_over.png)
+
+### 3. Tetris (`envpack/Tetris-v0`)
+
+A Gymnasium environment for the classic Tetris block-falling puzzle game played on a 10x20 grid.
+
+*   **Action Space**: `Discrete(5)`:
+    *   `0`: Move Left, `1`: Move Right, `2`: Rotate Clockwise, `3`: Soft Drop (Down 1), `4`: Hard Drop (Instant drop & lock)
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(20, 10)` representing the board (0: empty, 1..7: landed tetromino blocks, 8: active falling piece blocks).
+    *   `'valid_mask'`: `Box(5,)` binary mask of valid actions.
+    *   `'total_score'`: `Box(1,)` representing the accumulated score.
+*   **Rewards**: Small survival reward of `+0.01` per step. Clearing lines yields: `0.1` (1 line), `0.3` (2 lines), `0.5` (3 lines), `1.0` (4 lines). Game over yields `-1.0`.
+*   **Screenshots**:
+    *   *Initial State*: ![Tetris Initial State](tetris_screenshot_initial.png)
+    *   *Mid-game*: ![Tetris Mid-game State](tetris_screenshot_mid_game.png)
+    *   *Game Over*: ![Tetris Game Over State](tetris_screenshot_game_over.png)

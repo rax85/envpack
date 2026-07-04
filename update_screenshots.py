@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 from envpack.envs.game_2048.env import Gym2048Env
 from envpack.envs.game_snake.env import GymSnakeEnv
+from envpack.envs.game_tetris.env import GymTetrisEnv
 import random
 
 
@@ -47,6 +48,10 @@ def main():
     print("Generating Snake screenshots...")
     env_snake = GymSnakeEnv()
     generate_game_screenshots(env_snake, "snake_screenshot")
+
+    print("Generating Tetris screenshots...")
+    env_tetris = GymTetrisEnv()
+    generate_game_screenshots(env_tetris, "tetris_screenshot")
 
 
 if __name__ == "__main__":
