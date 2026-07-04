@@ -289,7 +289,72 @@ class TestGymCheckersEnv(unittest.TestCase):
         self.assertEqual(new_env._active_jumper, env._active_jumper)
         self.assertEqual(new_env._total_moves, env._total_moves)
         self.assertEqual(new_env._draw_counter, env._draw_counter)
+        self.assertEqual(new_env._game_draw_counter, env._game_draw_counter)
         self.assertEqual(new_env._move_history, env._move_history)
+
+    def test_game_draw_40_move_rule(self):
+        """Test the 40-move draw rule (80 plies without captures or normal piece moves)."""
+        env = GymCheckersEnv()
+        env.reset()
+        
+        # Setup board with only kings, so all moves are king moves
+        env._grid = np.zeros((8, 8), dtype=np.int32)
+        env._grid[0, 0] = P1_KING
+        env._grid[7, 7] = P2_KING
+        
+        # Make 79 non-capturing king moves
+        for i in range(79):
+            env._current_player = 1 if (i % 2 == 0) else 2
+            # Set game draw counter directly to simulate progress
+            env._game_draw_counter = i
+            # Move the king between (0,0) and (1,1) for P1, or (7,7) and (6,6) for P2
+            if env._current_player == 1:
+                action = np.array([0, 0, 1, 1], dtype=np.int32) if i % 4 in (0, 1) else np.array([1, 1, 0, 0], dtype=np.int32)
+            else:
+                action = np.array([7, 7, 6, 6], dtype=np.int32) if i % 4 in (0, 1) else np.array([6, 6, 7, 7], dtype=np.int32)
+            obs, reward, terminated, truncated, info = env.step(action)
+            self.assertFalse(terminated)
+
+        # 80th step should trigger the 40-move rule draw
+        env._game_draw_counter = 79
+        env._current_player = 1
+        action = np.array([0, 0, 1, 1], dtype=np.int32)
+        obs, reward, terminated, truncated, info = env.step(action)
+        self.assertTrue(terminated)
+        self.assertEqual(reward, 0.0)
+
+    def test_initial_blocked_state_termination(self):
+        """Test that if a player is blocked at the start of a step, the game ends immediately."""
+        env = GymCheckersEnv()
+        env.reset()
+        
+        # Setup P1 blocked, P2 has pieces but it's P1's turn
+        env._grid = np.zeros((8, 8), dtype=np.int32)
+        env._grid[0, 0] = P1_NORMAL
+        env._grid[1, 1] = P2_NORMAL
+        env._current_player = 1
+        
+        # Taking any action should immediately terminate the game with a loss for P1 (reward -10.0)
+        obs, reward, terminated, truncated, info = env.step(np.array([0, 0, 0, 0], dtype=np.int32))
+        self.assertTrue(terminated)
+        self.assertEqual(reward, -10.0)
+
+    def test_symmetric_rewards(self):
+        """Test that rewards/penalties are correctly sign-adjusted for zero-sum perspective."""
+        env = GymCheckersEnv()
+        env.reset()
+        
+        # Player 1's turn - invalid move: P1 is penalized (reward becomes more negative)
+        env._current_player = 1
+        # Set a clear valid moves list to ensure 0,0,0,0 is invalid
+        _, reward_p1, _, _, _ = env.step(np.array([0, 0, 0, 0], dtype=np.int32))
+        self.assertAlmostEqual(reward_p1, -0.11)  # step penalty (-0.01) + invalid penalty (-0.1)
+
+        # Player 2's turn - invalid move: P2 is penalized, meaning reward increases (more positive for P1)
+        env.reset()
+        env._current_player = 2
+        _, reward_p2, _, _, _ = env.step(np.array([0, 0, 0, 0], dtype=np.int32))
+        self.assertAlmostEqual(reward_p2, 0.11)   # step penalty (+0.01) + invalid penalty (+0.1)
 
 
 if __name__ == "__main__":

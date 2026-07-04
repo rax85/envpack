@@ -28,16 +28,16 @@ P2_NORMAL = 3
 P2_KING = 4
 
 # Colors
-COLOR_BG = (30, 30, 30)
-COLOR_DARK_SQUARE = (45, 45, 45)    # Playable
-COLOR_LIGHT_SQUARE = (70, 70, 70)   # Unplayable
-COLOR_GRID = (55, 55, 55)
-COLOR_P1 = (52, 152, 219)           # Cyan
-COLOR_P2 = (155, 89, 182)          # Magenta
-COLOR_CROWN = (241, 196, 15)        # Gold
-COLOR_HEADER = (52, 73, 94)
-COLOR_FOOTER = (44, 62, 80)
-COLOR_TEXT = (236, 240, 241)
+COLOR_BG = (20, 20, 20)
+COLOR_DARK_SQUARE = (35, 35, 35)    # Playable
+COLOR_LIGHT_SQUARE = (220, 220, 215) # Unplayable
+COLOR_GRID = (60, 60, 60)
+COLOR_P1 = (52, 172, 224)           # High-contrast Cyan
+COLOR_P2 = (224, 86, 253)           # High-contrast Magenta/Purple
+COLOR_CROWN = (255, 215, 0)         # Gold
+COLOR_HEADER = (30, 41, 59)
+COLOR_FOOTER = (15, 23, 42)
+COLOR_TEXT = (248, 250, 252)
 
 CANVAS_SIZE = (
     GRID_COLS * CELL_PX + 2 * PADDING_PX,
@@ -82,11 +82,32 @@ class GymCheckersEnv(gym.Env):
             }
         )
 
-        self._background = np.full(
-            (CANVAS_SIZE[1], CANVAS_SIZE[0], 3), COLOR_BG, dtype=np.uint8
+        # Pre-allocate static canvas base with header, footer, and board squares
+        self._base_canvas = Image.new("RGB", CANVAS_SIZE, COLOR_BG)
+        draw_base = ImageDraw.Draw(self._base_canvas)
+
+        # Draw static header and footer background areas
+        draw_base.rectangle([0, 0, CANVAS_SIZE[0] - 1, HEADER_PX - 1], fill=COLOR_HEADER)
+        draw_base.rectangle(
+            [0, CANVAS_SIZE[1] - FOOTER_PX, CANVAS_SIZE[0] - 1, CANVAS_SIZE[1] - 1],
+            fill=COLOR_FOOTER,
         )
-        self._background[0:HEADER_PX, :] = COLOR_HEADER
-        self._background[CANVAS_SIZE[1] - FOOTER_PX:, :] = COLOR_FOOTER
+
+        # Draw static board grid and cells
+        for r in range(GRID_ROWS):
+            for c in range(GRID_COLS):
+                rx = PADDING_PX + c * CELL_PX
+                ry = HEADER_PX + PADDING_PX + r * CELL_PX
+                
+                is_dark = (r + c) % 2 == 1
+                bg_color = COLOR_DARK_SQUARE if is_dark else COLOR_LIGHT_SQUARE
+                
+                draw_base.rectangle(
+                    [rx, ry, rx + CELL_PX - 1, ry + CELL_PX - 1],
+                    fill=bg_color,
+                    outline=COLOR_GRID,
+                    width=1,
+                )
 
         self.reset()
 
@@ -103,6 +124,7 @@ class GymCheckersEnv(gym.Env):
             self._active_jumper = state["active_jumper"]
             self._total_moves = state["total_moves"]
             self._draw_counter = state["draw_counter"]
+            self._game_draw_counter = state.get("game_draw_counter", 0)
             self._move_history = copy.deepcopy(state["move_history"])
 
             return self._create_observation(), {}
@@ -127,6 +149,7 @@ class GymCheckersEnv(gym.Env):
         self._active_jumper: Optional[Tuple[int, int]] = None
         self._total_moves = 0
         self._draw_counter = 0
+        self._game_draw_counter = 0
         self._move_history: List[Tuple[Tuple[int, int, int, int], bool]] = []
 
         return self._create_observation(), {}
@@ -254,17 +277,26 @@ class GymCheckersEnv(gym.Env):
         if not (0 <= fr < 8 and 0 <= fc < 8 and 0 <= tr < 8 and 0 <= tc < 8):
             raise ValueError(f"Action out of bounds: {action}")
 
-        # Check validity
-        valid_moves = self._get_valid_moves(self._current_player)
-        is_valid = (fr, fc, tr, tc) in valid_moves
+        # Check if current player is blocked before any move
+        curr_valid_moves = self._get_valid_moves(self._current_player)
+        if len(curr_valid_moves) == 0:
+            terminated = True
+            reward = -10.0 if self._current_player == 1 else 10.0
+            return self._create_observation(), float(reward), terminated, False, {"state": self._get_state()}
 
-        reward = -0.01  # Small step penalty to encourage speed
+        # Check validity
+        is_valid = (fr, fc, tr, tc) in curr_valid_moves
+
+        # Sign multiplier for zero-sum reward perspective (Player 1 is maximizing, Player 2 is minimizing)
+        player_sign = 1 if self._current_player == 1 else -1
+
+        reward = -0.01 * player_sign  # Small step penalty to encourage speed
         self._total_moves += 1
 
         if not is_valid:
             # Invalid move penalty and action is ignored
             self._draw_counter += 1
-            reward -= 0.1
+            reward -= 0.1 * player_sign
             self._move_history.append(((fr, fc, tr, tc), False))
             if len(self._move_history) > 6:
                 self._move_history.pop(0)
@@ -278,6 +310,12 @@ class GymCheckersEnv(gym.Env):
         self._draw_counter = 0
         piece = self._grid[fr, fc]
         is_jump = abs(tr - fr) == 2
+
+        # Update game draw counter (40-move rule: 80 plies without captures or normal piece moves)
+        if is_jump or piece in (P1_NORMAL, P2_NORMAL):
+            self._game_draw_counter = 0
+        else:
+            self._game_draw_counter += 1
 
         # Move piece on grid
         self._grid[tr, tc] = piece
@@ -335,10 +373,13 @@ class GymCheckersEnv(gym.Env):
         elif p2_cnt == 0:
             terminated = True
             reward = 10.0   # Player 1 wins
+        elif self._game_draw_counter >= 80:
+            terminated = True
+            reward = 0.0    # 40-move draw rule (80 plies)
         else:
             # Check if current player is blocked
-            curr_valid_moves = self._get_valid_moves(self._current_player)
-            if len(curr_valid_moves) == 0:
+            new_curr_valid_moves = self._get_valid_moves(self._current_player)
+            if len(new_curr_valid_moves) == 0:
                 terminated = True
                 # If current player is blocked, they lose.
                 reward = -10.0 if self._current_player == 1 else 10.0
@@ -355,6 +396,7 @@ class GymCheckersEnv(gym.Env):
             "active_jumper": self._active_jumper,
             "total_moves": self._total_moves,
             "draw_counter": self._draw_counter,
+            "game_draw_counter": self._game_draw_counter,
             "move_history": copy.deepcopy(self._move_history),
         }
 
@@ -363,13 +405,13 @@ class GymCheckersEnv(gym.Env):
     ) -> None:
         """Draw a text representation of a move in the footer history."""
         fr, fc, tr, tc = action
-        text = f"({fr},{fc})→({tr},{tc})"
+        text = f"{fr},{fc}→{tr},{tc}"
         color = COLOR_P1 if is_valid else (231, 76, 60)
         draw.text((x, y), text, fill=color, font=self._stats_font, anchor="lm")
 
     def _render(self) -> None:
         """Draw visuals representing the current board state."""
-        canvas = Image.fromarray(self._background)
+        canvas = self._base_canvas.copy()
         draw = ImageDraw.Draw(canvas)
 
         # Draw Header
@@ -382,41 +424,53 @@ class GymCheckersEnv(gym.Env):
         )
 
         p1_cnt, p2_cnt = self._get_pieces_count()
+        # Draw current turn indicator pill badge
+        turn_color = COLOR_P1 if self._current_player == 1 else COLOR_P2
+        badge_w = 75
+        badge_h = 22
+        badge_x = CANVAS_SIZE[0] - PADDING_PX - badge_w - 5
+        badge_y = HEADER_PX // 2 - badge_h // 2
+        
+        # Pill badge background
+        draw.rounded_rectangle(
+            [badge_x, badge_y, badge_x + badge_w, badge_y + badge_h],
+            radius=4,
+            fill=turn_color,
+        )
+        # Pill badge text (using dark color for contrast)
         draw.text(
-            (CANVAS_SIZE[0] - PADDING_PX - 5, HEADER_PX // 2),
-            f"P1: {p1_cnt} | P2: {p2_cnt} | Turn: P{self._current_player}",
+            (badge_x + badge_w // 2, HEADER_PX // 2),
+            f"P{self._current_player} TURN",
+            fill=(20, 20, 20),
+            font=self._stats_font,
+            anchor="mm",
+        )
+
+        # Draw pieces count to the left of the badge
+        draw.text(
+            (badge_x - 15, HEADER_PX // 2),
+            f"P1: {p1_cnt} | P2: {p2_cnt}",
             fill=COLOR_TEXT,
-            font=self._title_font,
+            font=self._stats_font,
             anchor="rm",
         )
 
-        # Draw board cells
+        # Draw board cells (draw pieces only, since empty grid is static on canvas template)
         for r in range(GRID_ROWS):
             for c in range(GRID_COLS):
-                rx = PADDING_PX + c * CELL_PX
-                ry = HEADER_PX + PADDING_PX + r * CELL_PX
-                
-                # Check square color
-                is_dark = (r + c) % 2 == 1
-                bg_color = COLOR_DARK_SQUARE if is_dark else COLOR_LIGHT_SQUARE
-                
-                # Draw square cell
-                draw.rectangle(
-                    [rx, ry, rx + CELL_PX - 1, ry + CELL_PX - 1],
-                    fill=bg_color,
-                    outline=COLOR_GRID,
-                    width=1,
-                )
-
-                # Draw piece if present
                 piece = self._grid[r, c]
                 if piece != EMPTY:
+                    rx = PADDING_PX + c * CELL_PX
+                    ry = HEADER_PX + PADDING_PX + r * CELL_PX
+                    
                     is_p1 = piece in (P1_NORMAL, P1_KING)
                     is_king = piece in (P1_KING, P2_KING)
                     color = COLOR_P1 if is_p1 else COLOR_P2
                     
-                    # Draw circle disc
+                    # Draw piece circle disc
                     offset = 4
+                    # Outer disc outline color: slightly darker than piece color
+                    outline_color = (30, 110, 150) if is_p1 else (140, 40, 160)
                     draw.ellipse(
                         [
                             rx + offset,
@@ -425,19 +479,42 @@ class GymCheckersEnv(gym.Env):
                             ry + CELL_PX - offset - 1,
                         ],
                         fill=color,
+                        outline=outline_color,
+                        width=1,
+                    )
+
+                    # Draw classic checkers concentric inner ring
+                    inner_offset = offset + 4
+                    draw.ellipse(
+                        [
+                            rx + inner_offset,
+                            ry + inner_offset,
+                            rx + CELL_PX - inner_offset - 1,
+                            ry + CELL_PX - inner_offset - 1,
+                        ],
+                        outline=outline_color,
+                        width=1,
                     )
 
                     # Highlight King piece
                     if is_king:
-                        # Draw crown shape or star dot
-                        draw.ellipse(
-                            [
-                                rx + CELL_PX // 2 - 4,
-                                ry + CELL_PX // 2 - 4,
-                                rx + CELL_PX // 2 + 4,
-                                ry + CELL_PX // 2 + 4,
-                            ],
+                        cx = rx + CELL_PX // 2
+                        cy = ry + CELL_PX // 2
+                        # 3-peak crown polygon
+                        crown_coords = [
+                            (cx - 8, cy + 5),
+                            (cx - 8, cy - 5),
+                            (cx - 4, cy - 1),
+                            (cx, cy - 7),
+                            (cx + 4, cy - 1),
+                            (cx + 8, cy - 5),
+                            (cx + 8, cy + 5),
+                        ]
+                        draw.polygon(
+                            crown_coords,
                             fill=COLOR_CROWN,
+                            outline=(0, 0, 0),
+                            width=1,
                         )
 
         # Draw Footer Statistics
@@ -454,12 +531,12 @@ class GymCheckersEnv(gym.Env):
         arrow_y = CANVAS_SIZE[1] - FOOTER_PX // 2
         visible_history = self._move_history[-3:]
         if visible_history:
-            x_pos = CANVAS_SIZE[0] - 220
+            x_pos = CANVAS_SIZE[0] - 250
             draw.text((x_pos, arrow_y), "Moves: ", fill=(150, 150, 150), font=self._stats_font, anchor="lm")
-            x_pos += 40
+            x_pos += 45
             for idx, (action, is_valid) in enumerate(visible_history):
                 self._draw_symbol(draw, x_pos, arrow_y, action, is_valid)
-                x_pos += 50
+                x_pos += 52
                 if idx < len(visible_history) - 1:
                     draw.text((x_pos, arrow_y), "→", fill=(100, 100, 100), font=self._stats_font, anchor="lm")
                     x_pos += 12
