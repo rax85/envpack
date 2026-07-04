@@ -71,9 +71,12 @@ A Gymnasium environment for the classic 2048 tile-merging game played on a 4x4 g
     *   `'total_score'`: `Box(1,)` representing the accumulated score.
 *   **Rewards**: Sum of merged tile values. Invalid moves yield `-32`.
 *   **Screenshots**:
-    *   *Initial State*: ![2048 Initial State](screenshots/screenshot_initial.png)
-    *   *Mid-game*: ![2048 Mid-game State](screenshots/screenshot_mid_game.png)
-    *   *Game Over*: ![2048 Game Over State](screenshots/screenshot_game_over.png)
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![2048 Initial State](screenshots/screenshot_initial.png) |
+| **Mid-game** | ![2048 Mid-game State](screenshots/screenshot_mid_game.png) |
+| **Game Over** | ![2048 Game Over State](screenshots/screenshot_game_over.png) |
 
 ### 2. Snake (`envpack/Snake-v0`)
 
@@ -87,9 +90,12 @@ A Gymnasium environment for the classic Snake game played on a 10x10 grid.
     *   `'total_score'`: `Box(1,)` representing the number of food items eaten.
 *   **Rewards**: `+1.0` for eating food, `-0.01` step penalty, and `-1.0` for wall/self collision.
 *   **Screenshots**:
-    *   *Initial State*: ![Snake Initial State](screenshots/snake_screenshot_initial.png)
-    *   *Mid-game*: ![Snake Mid-game State](screenshots/snake_screenshot_mid_game.png)
-    *   *Game Over*: ![Snake Game Over State](screenshots/snake_screenshot_game_over.png)
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Snake Initial State](screenshots/snake_screenshot_initial.png) |
+| **Mid-game** | ![Snake Mid-game State](screenshots/snake_screenshot_mid_game.png) |
+| **Game Over** | ![Snake Game Over State](screenshots/snake_screenshot_game_over.png) |
 
 ### 3. Tetris (`envpack/Tetris-v0`)
 
@@ -103,9 +109,12 @@ A Gymnasium environment for the classic Tetris block-falling puzzle game played 
     *   `'total_score'`: `Box(1,)` representing the accumulated score.
 *   **Rewards**: Small survival reward of `+0.01` per step. Clearing lines yields: `0.1` (1 line), `0.3` (2 lines), `0.5` (3 lines), `1.0` (4 lines). Game over yields `-1.0`.
 *   **Screenshots**:
-    *   *Initial State*: ![Tetris Initial State](screenshots/tetris_screenshot_initial.png)
-    *   *Mid-game*: ![Tetris Mid-game State](screenshots/tetris_screenshot_mid_game.png)
-    *   *Game Over*: ![Tetris Game Over State](screenshots/tetris_screenshot_game_over.png)
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Tetris Initial State](screenshots/tetris_screenshot_initial.png) |
+| **Mid-game** | ![Tetris Mid-game State](screenshots/tetris_screenshot_mid_game.png) |
+| **Game Over** | ![Tetris Game Over State](screenshots/tetris_screenshot_game_over.png) |
 
 ### 4. Sudoku (`envpack/Sudoku-v0`)
 
@@ -122,9 +131,12 @@ A Gymnasium environment for solving standard 9x9 Sudoku puzzles.
     *   `'total_score'`: `Box(1,)` representing number of cells matching target solution.
 *   **Rewards**: `+1.0` for placing a correct digit, `-1.0` for removing/replacing a correct digit, `-0.1` for constraint conflict violations, and `-0.01` step penalty. Completion yields a `+10.0` bonus.
 *   **Screenshots**:
-    *   *Initial State*: ![Sudoku Initial State](screenshots/sudoku_screenshot_initial.png)
-    *   *Mid-game*: ![Sudoku Mid-game State](screenshots/sudoku_screenshot_mid_game.png)
-    *   *Solved State*: ![Sudoku Solved State](screenshots/sudoku_screenshot_solved.png)
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Sudoku Initial State](screenshots/sudoku_screenshot_initial.png) |
+| **Mid-game** | ![Sudoku Mid-game State](screenshots/sudoku_screenshot_mid_game.png) |
+| **Solved State** | ![Sudoku Solved State](screenshots/sudoku_screenshot_solved.png) |
 
 ### 5. Raptor (`envpack/Raptor-v0`)
 
@@ -139,9 +151,12 @@ A Gymnasium environment for a classic vertical scrolling shooter game inspired b
     *   `'shield'`: `Box(1,)` representing the player's shield health level `[0..100]`.
 *   **Rewards**: Survival reward of `+0.05` per step. Destroying a basic enemy yields `+1.0` (score +100), destroying a shooter enemy yields `+2.5` (score +250). Collecting gold coins yields `+2.0` (score +500, credits +$50). Taking damage from enemy bullets yields `-1.5` (-10% shield), taking damage from direct ship collisions yields `-5.0` (-30% shield). Dying yields `-10.0` death penalty and terminates the episode.
 *   **Screenshots**:
-    *   *Initial State*: ![Raptor Initial State](screenshots/raptor_screenshot_initial.png)
-    *   *Mid-game*: ![Raptor Mid-game State](screenshots/raptor_screenshot_mid_game.png)
-    *   *Game Over*: ![Raptor Game Over State](screenshots/raptor_screenshot_game_over.png)
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Raptor Initial State](screenshots/raptor_screenshot_initial.png) |
+| **Mid-game** | ![Raptor Mid-game State](screenshots/raptor_screenshot_mid_game.png) |
+| **Game Over** | ![Raptor Game Over State](screenshots/raptor_screenshot_game_over.png) |
 
 ---
 
@@ -165,9 +180,12 @@ A Gymnasium environment for two-player American Checkers (Draughts) played on an
 *   **Stalemate & Multi-jumps**:
     *   Standard American Checkers rules apply: jump captures are mandatory. If a multi-jump is available, the active jumper piece must continue jumping and the turn does not switch.
 *   **Screenshots**:
-    *   *Initial State*: ![Checkers Initial State](screenshots/checkers_screenshot_initial.png)
-    *   *Mid-game*: ![Checkers Mid-game State](screenshots/checkers_screenshot_mid_game.png)
-    *   *Game Over*: ![Checkers Game Over State](screenshots/checkers_screenshot_game_over.png)
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Checkers Initial State](screenshots/checkers_screenshot_initial.png) |
+| **Mid-game** | ![Checkers Mid-game State](screenshots/checkers_screenshot_mid_game.png) |
+| **Game Over** | ![Checkers Game Over State](screenshots/checkers_screenshot_game_over.png) |
 
 ### 2. Tron Light Cycles (`envpack/Tron-v0`)
 
@@ -186,9 +204,12 @@ A Gymnasium environment for two-player simultaneous-move Tron Light Cycles playe
     *   `0.0` for a head-on collision or joint crash (draw).
     *   `+0.01` survival reward per step for both players (net zero-sum is preserved).
 *   **Screenshots**:
-    *   *Initial State*: ![Tron Initial State](screenshots/tron_screenshot_initial.png)
-    *   *Mid-game*: ![Tron Mid-game State](screenshots/tron_screenshot_mid_game.png)
-    *   *Game Over*: ![Tron Game Over State](screenshots/tron_screenshot_game_over.png)
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Tron Initial State](screenshots/tron_screenshot_initial.png) |
+| **Mid-game** | ![Tron Mid-game State](screenshots/tron_screenshot_mid_game.png) |
+| **Game Over** | ![Tron Game Over State](screenshots/tron_screenshot_game_over.png) |
 
 ### 3. Air Hockey (`envpack/AirHockey-v0`)
 
@@ -205,6 +226,9 @@ A Gymnasium environment for two-player continuous 2D physics-based Air Hockey.
     *   `+1.0` when Player 1 scores in Player 2's goal (and `-1.0` when Player 2 scores).
     *   `+10.0` win bonus when Player 1 reaches 7 goals (and `-10.0` loss penalty when Player 2 reaches 7).
 *   **Screenshots**:
-    *   *Initial State*: ![Air Hockey Initial State](screenshots/air_hockey_screenshot_initial.png)
-    *   *Mid-game*: ![Air Hockey Mid-game State](screenshots/air_hockey_screenshot_mid_game.png)
-    *   *Game Over*: ![Air Hockey Game Over State](screenshots/air_hockey_screenshot_game_over.png)
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Air Hockey Initial State](screenshots/air_hockey_screenshot_initial.png) |
+| **Mid-game** | ![Air Hockey Mid-game State](screenshots/air_hockey_screenshot_mid_game.png) |
+| **Game Over** | ![Air Hockey Game Over State](screenshots/air_hockey_screenshot_game_over.png) |
