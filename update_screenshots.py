@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from PIL import Image
-from gym_2048.envs.gym_2048_env import Gym2048Env
+from envpack.envs.game_2048.env import Gym2048Env
 import random
 
 

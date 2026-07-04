@@ -5,7 +5,7 @@ Measures the average step time over a large number of steps.
 
 import time
 import numpy as np
-from gym_2048.envs.gym_2048_env import Gym2048Env
+from envpack.envs.game_2048.env import Gym2048Env
 
 
 def benchmark():

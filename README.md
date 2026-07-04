@@ -1,6 +1,6 @@
-# gym_2048
+# envpack
 
-A simple Gymnasium environment for the game 2048.
+A collection of game environments for Gymnasium. Currently includes the game 2048.
 
 [![Python package](https://github.com/rax85/gym_2048/actions/workflows/python-package.yml/badge.svg)](https://github.com/rax85/gym_2048/actions/workflows/python-package.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -8,14 +8,15 @@ A simple Gymnasium environment for the game 2048.
 
 ## Description
 
-This environment implements the classic 2048 game. The game is played on a 4x4 grid. The goal is to slide tiles on the grid to combine tiles of the same value and create a tile with the value 2048.
+This package implements classic games as Gymnasium environments. Currently, it supports:
+1. **2048**: Played on a 4x4 grid. The goal is to slide tiles on the grid to combine tiles of the same value and create a tile with the value 2048.
 
 ## Installation
 
-To install the environment, you can use pip:
+To install the environments, you can use pip:
 
 ```bash
-pip install git+https://github.com/rax85/gym_2048.git
+pip install git+https://github.com/rax85/envpack.git
 ```
 
 ## Usage
@@ -24,9 +25,9 @@ To use the environment, you can use the following code:
 
 ```python
 import gymnasium as gym
-import gym_2048
+import envpack
 
-env = gym.make('gym_2048/2048-v0')
+env = gym.make('envpack/2048-v0')
 
 observation, info = env.reset()
 done = False

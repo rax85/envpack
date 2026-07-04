@@ -4,6 +4,8 @@ build/
 *.egg-info
 .pytest_cache/
 .vscode
-gym_2048/__pycache__
-gym_2048/envs/__pycache__
-gym_2048/envs/baselines/__pycache__
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/

@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="gym_2048",
+    name="envpack",
     version="0.0.1",
     packages=find_packages(),
     install_requires=[
@@ -19,10 +19,10 @@ setup(
     ],
     author="Rakesh Iyer",
     author_email="your.email@example.com",
-    description="A simple gymnasium environment to play the 2048 game.",
+    description="A collection of game environments for Gymnasium.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/rax85/gym_2048",
+    url="https://github.com/rax85/envpack",
     license="Apache-2.0",
     include_package_data=True,
     classifiers=[
