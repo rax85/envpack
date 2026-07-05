@@ -1,4 +1,42 @@
 [build-system]
-name = ["gym_2048"]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "envpack"
+version = "0.0.1"
+description = "A collection of game environments for Gymnasium."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [
+    {name = "Rakesh Iyer", email = "your.email@example.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "absl-py>=2.3.1",
+    "gymnasium>=1.2.3",
+    "numpy>=2.3.5",
+    "pillow>=11.3.0",
+    "matplotlib>=3.10.8",
+    "numba>=0.63.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/rax85/envpack"
+Repository = "https://github.com/rax85/envpack.git"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["envpack*"]

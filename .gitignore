@@ -1,6 +1,7 @@
 
 generate_screenshots.py
 build/
+dist/
 *.egg-info
 .pytest_cache/
 .vscode
