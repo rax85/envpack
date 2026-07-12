@@ -55,3 +55,10 @@ register(
     entry_point="envpack.envs.game_racing.env:GymRacingEnv",
     max_episode_steps=1000,
 )
+
+register(
+    id="envpack/Doom-v0",
+    entry_point="envpack.envs.game_doom.env:GymDoomEnv",
+    max_episode_steps=500,
+)
+

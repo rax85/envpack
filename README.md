@@ -45,6 +45,9 @@ env = gym.make('envpack/2048-v0')
 # To run Racing
 # env = gym.make('envpack/Racing-v0')
 
+# To run Doom
+# env = gym.make('envpack/Doom-v0')
+
 observation, info = env.reset()
 done = False
 
@@ -160,6 +163,33 @@ A Gymnasium environment for a classic vertical scrolling shooter game inspired b
 | **Initial State** | ![Raptor Initial State](screenshots/raptor_screenshot_initial.png) |
 | **Mid-game** | ![Raptor Mid-game State](screenshots/raptor_screenshot_mid_game.png) |
 | **Game Over** | ![Raptor Game Over State](screenshots/raptor_screenshot_game_over.png) |
+
+### 6. Doom (`envpack/Doom-v0`)
+
+A pseudo-3D first-person shooter Gymnasium environment using JIT-accelerated raycasting.
+
+*   **Action Space**: `Discrete(5)`:
+    *   `0`: Turn Left, `1`: Turn Right, `2`: Move Forward, `3`: Move Backward, `4`: Shoot
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(240, 320, 3)` representing the first-person 3D raycasted view.
+    *   `'valid_mask'`: `Box(5,)` binary mask of valid actions.
+    *   `'health'`: `Box(1,)` representing the player's health `[0..100]`.
+    *   `'ammo'`: `Box(1,)` representing the player's remaining ammunition `[0..99]`.
+    *   `'score'`: `Box(1,)` representing the current score (kills).
+*   **Rewards**:
+    *   Small step penalty of `-0.01`.
+    *   Defeating an enemy yields `+10.0` (score +100), hitting an enemy yields `+2.0`.
+    *   Picking up health/ammo packs yields `+2.0`.
+    *   Getting hit by an enemy yields `-1.0`.
+    *   Clearing all enemies (victory) yields `+20.0`.
+    *   Dying yields `-10.0`.
+*   **Screenshots**:
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Doom Initial State](screenshots/doom_screenshot_initial.png) |
+| **Mid-game** | ![Doom Mid-game State](screenshots/doom_screenshot_mid_game.png) |
+| **Game Over** | ![Doom Game Over State](screenshots/doom_screenshot_game_over.png) |
 
 ---
 

@@ -87,10 +87,10 @@ class GymCheckersEnv(gym.Env):
         draw_base = ImageDraw.Draw(self._base_canvas)
 
         # Draw static header and footer background areas
-        draw_base.rectangle([0, 0, CANVAS_SIZE[0] - 1, HEADER_PX - 1], fill=COLOR_HEADER)
+        draw_base.rectangle([0, 0, CANVAS_SIZE[0] - 1, HEADER_PX - 1], fill=(15, 23, 42))
         draw_base.rectangle(
             [0, CANVAS_SIZE[1] - FOOTER_PX, CANVAS_SIZE[0] - 1, CANVAS_SIZE[1] - 1],
-            fill=COLOR_FOOTER,
+            fill=(10, 15, 28),
         )
 
         # Draw static board grid and cells
@@ -100,14 +100,20 @@ class GymCheckersEnv(gym.Env):
                 ry = HEADER_PX + PADDING_PX + r * CELL_PX
                 
                 is_dark = (r + c) % 2 == 1
-                bg_color = COLOR_DARK_SQUARE if is_dark else COLOR_LIGHT_SQUARE
+                bg_color = (20, 28, 40) if is_dark else (30, 41, 59)
                 
                 draw_base.rectangle(
                     [rx, ry, rx + CELL_PX - 1, ry + CELL_PX - 1],
                     fill=bg_color,
-                    outline=COLOR_GRID,
+                    outline=(47, 58, 77),
                     width=1,
                 )
+                
+                # Draw high-tech center dot indicators on light squares
+                if not is_dark:
+                    cx = rx + CELL_PX // 2
+                    cy = ry + CELL_PX // 2
+                    draw_base.ellipse([cx - 1, cy - 1, cx + 1, cy + 1], fill=(80, 100, 130))
 
         self.reset()
 
@@ -412,6 +418,10 @@ class GymCheckersEnv(gym.Env):
     def _render(self) -> None:
         """Draw visuals representing the current board state."""
         canvas = self._base_canvas.copy()
+        
+        # We use an RGBA overlay to draw beautiful soft shadows and glowing highlights
+        overlay = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+        ol_draw = ImageDraw.Draw(overlay)
         draw = ImageDraw.Draw(canvas)
 
         # Draw Header
@@ -455,7 +465,30 @@ class GymCheckersEnv(gym.Env):
             anchor="rm",
         )
 
-        # Draw board cells (draw pieces only, since empty grid is static on canvas template)
+        # First pass: Draw drop shadows for all pieces to layer them below the main shapes
+        for r in range(GRID_ROWS):
+            for c in range(GRID_COLS):
+                piece = self._grid[r, c]
+                if piece != EMPTY:
+                    rx = PADDING_PX + c * CELL_PX
+                    ry = HEADER_PX + PADDING_PX + r * CELL_PX
+                    offset = 4
+                    # Translucent offset drop shadow
+                    ol_draw.ellipse(
+                        [
+                            rx + offset + 2,
+                            ry + offset + 3,
+                            rx + CELL_PX - offset + 1,
+                            ry + CELL_PX - offset + 2,
+                        ],
+                        fill=(0, 0, 0, 110),
+                    )
+
+        # Merge shadows with the main board canvas
+        canvas = Image.alpha_composite(canvas.convert("RGBA"), overlay).convert("RGB")
+        draw = ImageDraw.Draw(canvas)
+        
+        # Second pass: Draw pieces with glassy shading and highlights
         for r in range(GRID_ROWS):
             for c in range(GRID_COLS):
                 piece = self._grid[r, c]
@@ -465,12 +498,21 @@ class GymCheckersEnv(gym.Env):
                     
                     is_p1 = piece in (P1_NORMAL, P1_KING)
                     is_king = piece in (P1_KING, P2_KING)
-                    color = COLOR_P1 if is_p1 else COLOR_P2
                     
-                    # Draw piece circle disc
+                    # Glossy/3D lighting colors
+                    if is_p1:
+                        # Cyan tones
+                        color_main = (52, 172, 224)
+                        color_dark = (24, 112, 160)
+                        color_light = (120, 220, 255)
+                    else:
+                        # Magenta tones
+                        color_main = (224, 86, 253)
+                        color_dark = (140, 40, 170)
+                        color_light = (245, 180, 255)
+                        
                     offset = 4
-                    # Outer disc outline color: slightly darker than piece color
-                    outline_color = (30, 110, 150) if is_p1 else (140, 40, 160)
+                    # Draw piece base (3D border ring)
                     draw.ellipse(
                         [
                             rx + offset,
@@ -478,12 +520,23 @@ class GymCheckersEnv(gym.Env):
                             rx + CELL_PX - offset - 1,
                             ry + CELL_PX - offset - 1,
                         ],
-                        fill=color,
-                        outline=outline_color,
+                        fill=color_dark,
+                        outline=(0, 0, 0),
                         width=1,
                     )
 
-                    # Draw classic checkers concentric inner ring
+                    # Draw main piece body (slightly smaller)
+                    draw.ellipse(
+                        [
+                            rx + offset + 1,
+                            ry + offset + 1,
+                            rx + CELL_PX - offset - 2,
+                            ry + CELL_PX - offset - 2,
+                        ],
+                        fill=color_main,
+                    )
+
+                    # Classic inner ring
                     inner_offset = offset + 4
                     draw.ellipse(
                         [
@@ -492,30 +545,44 @@ class GymCheckersEnv(gym.Env):
                             rx + CELL_PX - inner_offset - 1,
                             ry + CELL_PX - inner_offset - 1,
                         ],
-                        outline=outline_color,
+                        outline=color_dark,
                         width=1,
                     )
+                    
+                    # spec highlight dot (specular gloss)
+                    draw.ellipse(
+                        [
+                            rx + offset + 4,
+                            ry + offset + 3,
+                            rx + offset + 9,
+                            ry + offset + 6,
+                        ],
+                        fill=color_light,
+                    )
 
-                    # Highlight King piece
+                    # Highlight King piece with a detailed gold crown
                     if is_king:
                         cx = rx + CELL_PX // 2
                         cy = ry + CELL_PX // 2
-                        # 3-peak crown polygon
+                        # Beautiful gold crown shape
                         crown_coords = [
-                            (cx - 8, cy + 5),
-                            (cx - 8, cy - 5),
-                            (cx - 4, cy - 1),
-                            (cx, cy - 7),
-                            (cx + 4, cy - 1),
-                            (cx + 8, cy - 5),
-                            (cx + 8, cy + 5),
+                            (cx - 7, cy + 4),
+                            (cx - 7, cy - 4),
+                            (cx - 3, cy),
+                            (cx, cy - 6),
+                            (cx + 3, cy),
+                            (cx + 7, cy - 4),
+                            (cx + 7, cy + 4),
                         ]
+                        # Draw crown base
                         draw.polygon(
                             crown_coords,
-                            fill=COLOR_CROWN,
-                            outline=(0, 0, 0),
+                            fill=(255, 215, 0),   # Gold
+                            outline=(120, 90, 0),
                             width=1,
                         )
+                        # Crown ruby/gem indicator in the middle
+                        draw.ellipse([cx - 1, cy + 1, cx + 1, cy + 3], fill=(231, 76, 60))
 
         # Draw Footer Statistics
         stats_text = f"Total Moves: {self._total_moves}"

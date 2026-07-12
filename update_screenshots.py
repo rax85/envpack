@@ -10,6 +10,8 @@ from envpack.envs.game_checkers.env import GymCheckersEnv
 from envpack.envs.game_tron.env import GymTronEnv
 from envpack.envs.game_air_hockey.env import GymAirHockeyEnv
 from envpack.envs.game_racing.env import GymRacingEnv
+from envpack.envs.game_doom.env import GymDoomEnv
+
 
 
 def save_screenshot(env, name):
@@ -230,6 +232,10 @@ def main():
 
     print("Generating Racing screenshots...")
     generate_racing_screenshots()
+
+    print("Generating Doom screenshots...")
+    env_doom = GymDoomEnv()
+    generate_game_screenshots(env_doom, "doom_screenshot")
 
 
 if __name__ == "__main__":

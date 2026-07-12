@@ -1,6 +1,7 @@
 """A Gymnasium environment for continuous 2D physics-based Air Hockey."""
 
 import copy
+import math
 from typing import Any, Tuple, Dict, Optional, List
 
 import gymnasium as gym
@@ -51,14 +52,17 @@ class GymAirHockeyEnv(gym.Env):
         super().__init__()
         self.render_mode = render_mode
 
-        # Font setup
+        # Scale Factor for supersampling anti-aliasing
+        self.SF = 3
+
+        # Font setup (multiplied by SF for crispness when scaled down)
         try:
             font_properties = font_manager.FontProperties(
                 family="sans-serif", weight="bold"
             )
             font_file = font_manager.findfont(font_properties)
-            self._title_font = ImageFont.truetype(font_file, 14)
-            self._stats_font = ImageFont.truetype(font_file, 10)
+            self._title_font = ImageFont.truetype(font_file, 14 * self.SF)
+            self._stats_font = ImageFont.truetype(font_file, 10 * self.SF)
         except Exception:
             logging.warning("Could not load system sans-serif font. Using default font.")
             self._title_font = ImageFont.load_default()
@@ -81,52 +85,62 @@ class GymAirHockeyEnv(gym.Env):
             }
         )
 
-        # Pre-allocate canvas base
-        self._base_canvas = Image.new("RGB", CANVAS_SIZE, COLOR_BG)
+        # Pre-allocate canvas base at 3x scale
+        self._base_canvas = Image.new("RGB", (CANVAS_SIZE[0] * self.SF, CANVAS_SIZE[1] * self.SF), (10, 15, 26))  # Deep space background
         draw_base = ImageDraw.Draw(self._base_canvas)
-        draw_base.rectangle([0, 0, CANVAS_SIZE[0] - 1, HEADER_PX - 1], fill=COLOR_GRID)
+        draw_base.rectangle([0, 0, CANVAS_SIZE[0] * self.SF - 1, HEADER_PX * self.SF - 1], fill=(15, 23, 42))
         draw_base.rectangle(
-            [0, CANVAS_SIZE[1] - FOOTER_PX, CANVAS_SIZE[0] - 1, CANVAS_SIZE[1] - 1],
-            fill=COLOR_GRID,
+            [0, (CANVAS_SIZE[1] - FOOTER_PX) * self.SF, CANVAS_SIZE[0] * self.SF - 1, CANVAS_SIZE[1] * self.SF - 1],
+            fill=(10, 15, 28),
         )
 
-        # Draw playing board borders and lines
+        # Draw playing board borders and lines with cyber glow aesthetics at 3x scale
         # Side walls
         draw_base.rectangle(
-            [0, HEADER_PX, TABLE_WIDTH - 1, TABLE_HEIGHT + HEADER_PX - 1],
-            outline=COLOR_BORDER,
-            width=3,
+            [0, HEADER_PX * self.SF, TABLE_WIDTH * self.SF - 1, (TABLE_HEIGHT + HEADER_PX) * self.SF - 1],
+            outline=(40, 55, 80),
+            width=3 * self.SF,
         )
-        # Center Line
+        # Inner glowing border frame
+        draw_base.rectangle(
+            [3 * self.SF, (HEADER_PX + 3) * self.SF, (TABLE_WIDTH - 4) * self.SF, (TABLE_HEIGHT + HEADER_PX - 4) * self.SF],
+            outline=(24, 70, 110),
+            width=1 * self.SF,
+        )
+        
+        # Center Line (neon blue/gray)
         draw_base.line(
-            [(0, HEADER_PX + TABLE_HEIGHT // 2), (TABLE_WIDTH, HEADER_PX + TABLE_HEIGHT // 2)],
-            fill=COLOR_CENTERLINE,
-            width=2,
+            [(0, (HEADER_PX + TABLE_HEIGHT // 2) * self.SF), (TABLE_WIDTH * self.SF, (HEADER_PX + TABLE_HEIGHT // 2) * self.SF)],
+            fill=(20, 60, 95),
+            width=2 * self.SF,
         )
-        # Center Circle
+        # Center Circle (neon blue/gray)
         draw_base.ellipse(
             [
-                TABLE_WIDTH // 2 - 40,
-                HEADER_PX + TABLE_HEIGHT // 2 - 40,
-                TABLE_WIDTH // 2 + 40,
-                HEADER_PX + TABLE_HEIGHT // 2 + 40,
+                (TABLE_WIDTH // 2 - 40) * self.SF,
+                (HEADER_PX + TABLE_HEIGHT // 2 - 40) * self.SF,
+                (TABLE_WIDTH // 2 + 40) * self.SF,
+                (HEADER_PX + TABLE_HEIGHT // 2 + 40) * self.SF,
             ],
-            outline=COLOR_CENTERLINE,
-            width=2,
+            outline=(20, 60, 95),
+            width=2 * self.SF,
         )
 
-        # Goals cutouts (draw them as goal indicators)
+        # Goals cutouts (draw them as glowing red laser gates)
         goal_left = (TABLE_WIDTH - GOAL_WIDTH) // 2
         goal_right = goal_left + GOAL_WIDTH
+        
+        # Top goal red laser glow
         draw_base.line(
-            [(goal_left, HEADER_PX), (goal_right, HEADER_PX)],
+            [(goal_left * self.SF, HEADER_PX * self.SF), (goal_right * self.SF, HEADER_PX * self.SF)],
             fill=(239, 68, 68),
-            width=4,
+            width=4 * self.SF,
         )
+        # Bottom goal red laser glow
         draw_base.line(
-            [(goal_left, HEADER_PX + TABLE_HEIGHT - 1), (goal_right, HEADER_PX + TABLE_HEIGHT - 1)],
+            [(goal_left * self.SF, (HEADER_PX + TABLE_HEIGHT - 1) * self.SF), (goal_right * self.SF, (HEADER_PX + TABLE_HEIGHT - 1) * self.SF)],
             fill=(239, 68, 68),
-            width=4,
+            width=4 * self.SF,
         )
 
         self.reset()
@@ -330,13 +344,17 @@ class GymAirHockeyEnv(gym.Env):
         }
 
     def render(self) -> Optional[npt.NDArray[np.uint8]]:
-        """Render the environment to an RGB canvas array."""
+        """Render the environment to an RGB canvas array with supersampling anti-aliasing."""
         canvas = self._base_canvas.copy()
+        
+        # RGBA overlay for soft drop shadows and glowing motion trails at 3x scale
+        overlay = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+        ol_draw = ImageDraw.Draw(overlay)
         draw = ImageDraw.Draw(canvas)
 
-        # Header Info
+        # Header Info at 3x scale
         draw.text(
-            (PADDING_PX + 5, HEADER_PX // 2),
+            ((PADDING_PX + 5) * self.SF, (HEADER_PX // 2) * self.SF),
             "AIR HOCKEY 2D",
             fill=COLOR_TEXT,
             font=self._title_font,
@@ -344,60 +362,125 @@ class GymAirHockeyEnv(gym.Env):
         )
 
         draw.text(
-            (CANVAS_SIZE[0] - PADDING_PX - 5, HEADER_PX // 2),
+            ((CANVAS_SIZE[0] - PADDING_PX - 5) * self.SF, (HEADER_PX // 2) * self.SF),
             f"P1: {self._scores[0]} | P2: {self._scores[1]}",
             fill=COLOR_TEXT,
             font=self._title_font,
             anchor="rm",
         )
 
-        # Draw Player 1 Mallet (Blue)
-        p1_x, p1_y = int(self._p1_pos[0]), int(self._p1_pos[1] + HEADER_PX)
+        # Convert positions to scale
+        p1_x = int(self._p1_pos[0] * self.SF)
+        p1_y = int((self._p1_pos[1] + HEADER_PX) * self.SF)
+        p2_x = int(self._p2_pos[0] * self.SF)
+        p2_y = int((self._p2_pos[1] + HEADER_PX) * self.SF)
+        puck_x = int(self._puck_pos[0] * self.SF)
+        puck_y = int((self._puck_pos[1] + HEADER_PX) * self.SF)
+
+        m_rad = MALLET_RADIUS * self.SF
+        p_rad = PUCK_RADIUS * self.SF
+
+        # 1. Draw Drop Shadows (floating effect)
+        ol_draw.ellipse([p1_x - m_rad + 3 * self.SF, p1_y - m_rad + 4 * self.SF, p1_x + m_rad + 3 * self.SF, p1_y + m_rad + 4 * self.SF], fill=(0, 0, 0, 90))
+        ol_draw.ellipse([p2_x - m_rad + 3 * self.SF, p2_y - m_rad + 4 * self.SF, p2_x + m_rad + 3 * self.SF, p2_y + m_rad + 4 * self.SF], fill=(0, 0, 0, 90))
+        ol_draw.ellipse([puck_x - p_rad + 2 * self.SF, puck_y - p_rad + 3 * self.SF, puck_x + p_rad + 2 * self.SF, puck_y + p_rad + 3 * self.SF], fill=(0, 0, 0, 90))
+
+        # 2. Draw Puck motion blur/energy trail based on velocity
+        puck_speed = math.hypot(self._puck_vel[0], self._puck_vel[1])
+        if puck_speed > 0.5:
+            # Draw 3 fading trail segments
+            for i in range(1, 4):
+                tx = int((self._puck_pos[0] - self._puck_vel[0] * i * 0.5) * self.SF)
+                ty = int((self._puck_pos[1] + HEADER_PX - self._puck_vel[1] * i * 0.5) * self.SF)
+                t_rad = max(2 * self.SF, p_rad - i * self.SF)
+                alpha = int(140 / (i + 1))
+                ol_draw.ellipse([tx - t_rad, ty - t_rad, tx + t_rad, ty + t_rad], fill=(239, 68, 68, alpha))
+
+        # Merge shadows/trails overlay onto main table canvas
+        canvas = Image.alpha_composite(canvas.convert("RGBA"), overlay).convert("RGB")
+        draw = ImageDraw.Draw(canvas)
+
+        # 3. Draw Player 1 Mallet (Blue Shaded neon disc)
+        # Outer base
         draw.ellipse(
-            [p1_x - MALLET_RADIUS, p1_y - MALLET_RADIUS, p1_x + MALLET_RADIUS, p1_y + MALLET_RADIUS],
+            [p1_x - m_rad, p1_y - m_rad, p1_x + m_rad, p1_y + m_rad],
+            fill=(10, 110, 160),
+            outline=(255, 255, 255),
+            width=2 * self.SF,
+        )
+        # Glowing inner core
+        draw.ellipse(
+            [p1_x - m_rad + 3 * self.SF, p1_y - m_rad + 3 * self.SF, p1_x + m_rad - 3 * self.SF, p1_y + m_rad - 3 * self.SF],
             fill=COLOR_P1,
-            outline=(255, 255, 255),
-            width=2,
         )
+        # Inner grip ring
         draw.ellipse(
-            [p1_x - MALLET_RADIUS // 2, p1_y - MALLET_RADIUS // 2, p1_x + MALLET_RADIUS // 2, p1_y + MALLET_RADIUS // 2],
+            [p1_x - m_rad // 2, p1_y - m_rad // 2, p1_x + m_rad // 2, p1_y + m_rad // 2],
             outline=(255, 255, 255),
-            width=1,
+            width=1 * self.SF,
+        )
+        # Specular light reflect
+        draw.ellipse(
+            [p1_x - 6 * self.SF, p1_y - 8 * self.SF, p1_x - 2 * self.SF, p1_y - 5 * self.SF],
+            fill=(255, 255, 255),
         )
 
-        # Draw Player 2 Mallet (Orange)
-        p2_x, p2_y = int(self._p2_pos[0]), int(self._p2_pos[1] + HEADER_PX)
+        # 4. Draw Player 2 Mallet (Orange Shaded neon disc)
+        # Outer base
         draw.ellipse(
-            [p2_x - MALLET_RADIUS, p2_y - MALLET_RADIUS, p2_x + MALLET_RADIUS, p2_y + MALLET_RADIUS],
+            [p2_x - m_rad, p2_y - m_rad, p2_x + m_rad, p2_y + m_rad],
+            fill=(180, 80, 10),
+            outline=(255, 255, 255),
+            width=2 * self.SF,
+        )
+        # Glowing inner core
+        draw.ellipse(
+            [p2_x - m_rad + 3 * self.SF, p2_y - m_rad + 3 * self.SF, p2_x + m_rad - 3 * self.SF, p2_y + m_rad - 3 * self.SF],
             fill=COLOR_P2,
-            outline=(255, 255, 255),
-            width=2,
         )
+        # Inner grip ring
         draw.ellipse(
-            [p2_x - MALLET_RADIUS // 2, p2_y - MALLET_RADIUS // 2, p2_x + MALLET_RADIUS // 2, p2_y + MALLET_RADIUS // 2],
+            [p2_x - m_rad // 2, p2_y - m_rad // 2, p2_x + m_rad // 2, p2_y + m_rad // 2],
             outline=(255, 255, 255),
-            width=1,
+            width=1 * self.SF,
+        )
+        # Specular light reflect
+        draw.ellipse(
+            [p2_x - 6 * self.SF, p2_y - 8 * self.SF, p2_x - 2 * self.SF, p2_y - 5 * self.SF],
+            fill=(255, 255, 255),
         )
 
-        # Draw Puck (Red)
-        puck_x, puck_y = int(self._puck_pos[0]), int(self._puck_pos[1] + HEADER_PX)
+        # 5. Draw Puck (Red Glowing Core)
+        # Outer red rim
         draw.ellipse(
-            [puck_x - PUCK_RADIUS, puck_y - PUCK_RADIUS, puck_x + PUCK_RADIUS, puck_y + PUCK_RADIUS],
-            fill=COLOR_PUCK,
+            [puck_x - p_rad, puck_y - p_rad, puck_x + p_rad, puck_y + p_rad],
+            fill=(180, 30, 30),
             outline=(255, 255, 255),
-            width=1,
+            width=1 * self.SF,
+        )
+        # Glowing center
+        draw.ellipse(
+            [puck_x - p_rad + 2 * self.SF, puck_y - p_rad + 2 * self.SF, puck_x + p_rad - 2 * self.SF, puck_y + p_rad - 2 * self.SF],
+            fill=(255, 80, 80),
+        )
+        # Specular light reflect
+        draw.ellipse(
+            [puck_x - 3 * self.SF, puck_y - 4 * self.SF, puck_x - 1 * self.SF, puck_y - 2 * self.SF],
+            fill=(255, 255, 255),
         )
 
         # Footer stats
         draw.text(
-            (PADDING_PX + 5, CANVAS_SIZE[1] - FOOTER_PX // 2),
+            ((PADDING_PX + 5) * self.SF, (CANVAS_SIZE[1] - FOOTER_PX // 2) * self.SF),
             f"Steps: {self._steps}",
             fill=(180, 180, 180),
             font=self._stats_font,
             anchor="lm",
         )
 
-        return np.array(canvas, dtype=np.uint8)
+        # Downsample using high-quality LANCZOS anti-aliasing
+        canvas_resized = canvas.resize(CANVAS_SIZE, Image.Resampling.LANCZOS)
+        return np.array(canvas_resized, dtype=np.uint8)
 
     def close(self) -> None:
         """Close the environment."""

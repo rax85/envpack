@@ -1,6 +1,7 @@
 """A Gymnasium environment for a Raptor-inspired vertical scrolling shooter."""
 
 import copy
+import math
 from typing import Any, Tuple, Dict, Optional, List
 
 import gymnasium as gym
@@ -388,77 +389,142 @@ class GymRaptorEnv(gym.Env):
             anchor="rm",
         )
 
-        # Draw Stars background
-        for x, y, _ in self._stars:
-            draw.ellipse([x - 1, y - 1, x + 1, y + 1], fill=(120, 120, 150))
+        # Draw dynamic/faint nebula background
+        overlay = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+        ol_draw = ImageDraw.Draw(overlay)
+        # Soft glowing nebula clouds (different colors: violet/blue/cyan)
+        neb_y1 = int((self._step_count * 0.5) % (CANVAS_SIZE[1] - HEADER_PX - FOOTER_PX)) + HEADER_PX
+        neb_y2 = int((self._step_count * 0.3 + 120) % (CANVAS_SIZE[1] - HEADER_PX - FOOTER_PX)) + HEADER_PX
+        ol_draw.ellipse([20 - 50, neb_y1 - 50, 20 + 50, neb_y1 + 50], fill=(80, 20, 100, 25))
+        ol_draw.ellipse([CANVAS_SIZE[0] - 30 - 70, neb_y2 - 70, CANVAS_SIZE[0] - 30 + 70, neb_y2 + 70], fill=(20, 60, 95, 18))
+        
+        # Soft CRT scanlines (alpha=12)
+        for y in range(HEADER_PX + PADDING_PX, CANVAS_SIZE[1] - FOOTER_PX - PADDING_PX, 2):
+            ol_draw.line((PADDING_PX, y, CANVAS_SIZE[0] - PADDING_PX, y), fill=(0, 0, 0, 12))
+            
+        canvas = Image.alpha_composite(canvas.convert("RGBA"), overlay).convert("RGB")
+        draw = ImageDraw.Draw(canvas)
 
-        # Draw Grid Cells
+        # Draw Stars background with depth cueing
+        for x, y, speed in self._stars:
+            if speed > 2.2:
+                size = 1.5
+                color = (220, 235, 255)  # Bright near star
+            elif speed > 1.6:
+                size = 1.0
+                color = (160, 180, 210)  # Mid-distance star
+            else:
+                size = 0.5
+                color = (90, 100, 120)   # Faint far star
+            draw.ellipse([x - size, y - size, x + size, y + size], fill=color)
+
+        # Draw Grid Cells (faint wireframe style)
         for r in range(GRID_ROWS):
             for c in range(GRID_COLS):
                 rx = PADDING_PX + c * CELL_PX
                 ry = HEADER_PX + PADDING_PX + r * CELL_PX
                 
-                # Check what cell contains
-                # We draw grid cells with outline
+                # Soft grid outline
                 draw.rectangle(
                     [rx, ry, rx + CELL_PX - 1, ry + CELL_PX - 1],
-                    outline=COLOR_GRID,
+                    outline=(40, 40, 55),
                     width=1,
                 )
 
         # Draw Entities on top of background
-        # 1. Lasers
+        # 1. Lasers (Glowing neon laser beam)
         for r, c in self._lasers:
             rx = PADDING_PX + c * CELL_PX + CELL_PX // 2
             ry = HEADER_PX + PADDING_PX + r * CELL_PX
-            draw.line([(rx, ry), (rx, ry + CELL_PX - 1)], fill=COLOR_LASER, width=3)
+            # Outer neon glow
+            draw.line([(rx, ry), (rx, ry + CELL_PX - 1)], fill=(46, 204, 113), width=5)
+            # White core
+            draw.line([(rx, ry + 2), (rx, ry + CELL_PX - 3)], fill=(255, 255, 255), width=2)
 
-        # 2. Bullets
+        # 2. Bullets (Glowing plasma sphere)
         for r, c in self._bullets:
             rx = PADDING_PX + c * CELL_PX + CELL_PX // 2
             ry = HEADER_PX + PADDING_PX + r * CELL_PX + CELL_PX // 2
-            draw.ellipse([rx - 4, ry - 4, rx + 4, ry + 4], fill=COLOR_BULLET)
+            # Orange outer glow
+            draw.ellipse([rx - 5, ry - 5, rx + 5, ry + 5], fill=(231, 76, 60))
+            # Yellow inner core
+            draw.ellipse([rx - 3, ry - 3, rx + 3, ry + 3], fill=(241, 196, 15))
+            # White hot center
+            draw.ellipse([rx - 1, ry - 1, rx + 1, ry + 1], fill=(255, 255, 255))
 
-        # 3. Coins
+        # 3. Coins (3D Rotating gold coin)
         for r, c in self._coins:
             rx = PADDING_PX + c * CELL_PX + CELL_PX // 2
             ry = HEADER_PX + PADDING_PX + r * CELL_PX + CELL_PX // 2
-            draw.ellipse([rx - 5, ry - 5, rx + 5, ry + 5], fill=COLOR_COIN)
+            rot_factor = abs(math.cos(self._step_count * 0.4))
+            w_half = max(1.0, 6.0 * rot_factor)
+            # Gold rim
+            draw.ellipse([rx - w_half, ry - 6, rx + w_half, ry + 6], fill=(243, 156, 18), outline=(211, 84, 0))
+            # Inner gleam
+            if w_half > 2.0:
+                draw.ellipse([rx - w_half + 1, ry - 4, rx + w_half - 1, ry + 4], fill=(241, 196, 15))
 
         # 4. Enemies
         for (r, c), etype in self._enemies:
             rx = PADDING_PX + c * CELL_PX
             ry = HEADER_PX + PADDING_PX + r * CELL_PX
-            color = COLOR_ENEMY_BASIC if etype == ENEMY_BASIC else COLOR_ENEMY_SHOOTER
-            # Draw triangle for enemy facing down
-            draw.polygon(
-                [
-                    (rx + CELL_PX // 2, ry + CELL_PX - 2),
-                    (rx + 2, ry + 2),
-                    (rx + CELL_PX - 3, ry + 2),
-                ],
-                fill=color,
-            )
+            if etype == ENEMY_BASIC:
+                # Basic enemy: Sleek red fighter ship
+                draw.polygon([
+                    (rx + 2, ry + 4),
+                    (rx + CELL_PX - 3, ry + 4),
+                    (rx + CELL_PX // 2, ry + CELL_PX - 4)
+                ], fill=(192, 57, 43))
+                draw.polygon([
+                    (rx + CELL_PX // 2 - 3, ry + 2),
+                    (rx + CELL_PX // 2 + 3, ry + 2),
+                    (rx + CELL_PX // 2, ry + CELL_PX - 2)
+                ], fill=(231, 76, 60))
+                # Visor/glowing strip
+                draw.line((rx + CELL_PX // 2 - 2, ry + CELL_PX // 2, rx + CELL_PX // 2 + 2, ry + CELL_PX // 2), fill=(241, 196, 15), width=2)
+            elif etype == ENEMY_SHOOTER:
+                # Shooter enemy: Purple alien dreadnought
+                draw.rectangle([rx + 2, ry + 4, rx + 5, ry + 12], fill=(142, 68, 173))
+                draw.rectangle([rx + CELL_PX - 6, ry + 4, rx + CELL_PX - 3, ry + 12], fill=(142, 68, 173))
+                draw.polygon([
+                    (rx + 5, ry + 2),
+                    (rx + CELL_PX - 6, ry + 2),
+                    (rx + CELL_PX // 2, ry + CELL_PX - 2)
+                ], fill=(155, 89, 182))
+                # Heavy core reactor
+                draw.ellipse([rx + CELL_PX // 2 - 3, ry + CELL_PX // 2 - 3, rx + CELL_PX // 2 + 3, ry + CELL_PX // 2 + 3], fill=(52, 152, 219))
 
         # 5. Player
         pr, pc = self._player_pos
         px = PADDING_PX + pc * CELL_PX
         py = HEADER_PX + PADDING_PX + pr * CELL_PX
-        # Draw ship triangle facing up
-        draw.polygon(
-            [
-                (px + CELL_PX // 2, py + 2),
-                (px + 2, py + CELL_PX - 3),
-                (px + CELL_PX - 3, py + CELL_PX - 3),
-            ],
-            fill=COLOR_PLAYER,
-        )
-        # Thruster fire
-        draw.line(
-            [(px + CELL_PX // 2, py + CELL_PX - 2), (px + CELL_PX // 2, py + CELL_PX + 2)],
-            fill=(230, 126, 34),
-            width=2,
-        )
+        # Wings
+        draw.polygon([
+            (px + 2, py + CELL_PX - 5),
+            (px + CELL_PX // 2, py + CELL_PX - 12),
+            (px + CELL_PX - 3, py + CELL_PX - 5),
+            (px + CELL_PX // 2, py + CELL_PX - 2)
+        ], fill=(41, 128, 185))
+        # Fuselage
+        draw.polygon([
+            (px + CELL_PX // 2, py + 2),
+            (px + CELL_PX // 2 - 4, py + CELL_PX - 4),
+            (px + CELL_PX // 2 + 4, py + CELL_PX - 4)
+        ], fill=(52, 152, 219))
+        # Cockpit canopy (neon green glass)
+        draw.ellipse([px + CELL_PX // 2 - 2, py + CELL_PX // 2 - 4, px + CELL_PX // 2 + 2, py + CELL_PX // 2 + 1], fill=(46, 204, 113))
+        # Thruster fire (flickers)
+        fire_len = 6 if (self._step_count % 2 == 0) else 10
+        draw.polygon([
+            (px + CELL_PX // 2 - 2, py + CELL_PX - 4),
+            (px + CELL_PX // 2 + 2, py + CELL_PX - 4),
+            (px + CELL_PX // 2, py + CELL_PX - 4 + fire_len)
+        ], fill=(230, 126, 34))
+        draw.polygon([
+            (px + CELL_PX // 2 - 1, py + CELL_PX - 4),
+            (px + CELL_PX // 2 + 1, py + CELL_PX - 4),
+            (px + CELL_PX // 2, py + CELL_PX - 4 + fire_len // 2)
+        ], fill=(255, 255, 255))
 
         # Draw Footer Statistics
         # Shield Health Bar
@@ -471,16 +537,23 @@ class GymRaptorEnv(gym.Env):
             anchor="lm",
         )
 
-        # Health bar box
+        # Segmented shield health bar
         bar_x = PADDING_PX + 90
         bar_y = CANVAS_SIZE[1] - FOOTER_PX // 2 - 5
-        bar_w = 80
         bar_h = 10
-        draw.rectangle([bar_x, bar_y, bar_x + bar_w, bar_y + bar_h], outline=(100, 100, 100), width=1)
-        fill_w = int(bar_w * (self._shield / 100.0))
-        if fill_w > 0:
-            fill_color = (46, 204, 113) if self._shield > 40 else (231, 76, 60)
-            draw.rectangle([bar_x + 1, bar_y + 1, bar_x + fill_w - 1, bar_y + bar_h - 1], fill=fill_color)
+        num_segments = 10
+        active_segments = int((self._shield / 100.0) * num_segments)
+        seg_w = 6
+        seg_gap = 2
+        for s in range(num_segments):
+            sx = bar_x + s * (seg_w + seg_gap)
+            fill_color = (40, 40, 40) # Empty segment
+            if s < active_segments:
+                if active_segments > 4:
+                    fill_color = (46, 204, 113) # Green
+                else:
+                    fill_color = (231, 76, 60)  # Red
+            draw.rectangle([sx, bar_y, sx + seg_w, bar_y + bar_h], fill=fill_color)
 
         # History
         hist_x = CANVAS_SIZE[0] - PADDING_PX - 120
