@@ -68,3 +68,10 @@ register(
     max_episode_steps=1000,
 )
 
+register(
+    id="envpack/StreetFighter-v0",
+    entry_point="envpack.envs.game_street_fighter.env:GymStreetFighterEnv",
+    max_episode_steps=1000,
+)
+
+

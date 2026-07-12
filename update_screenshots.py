@@ -12,6 +12,7 @@ from envpack.envs.game_air_hockey.env import GymAirHockeyEnv
 from envpack.envs.game_racing.env import GymRacingEnv
 from envpack.envs.game_doom.env import GymDoomEnv
 from envpack.envs.game_paratrooper.env import GymParatrooperEnv
+from envpack.envs.game_street_fighter.env import GymStreetFighterEnv
 
 
 
@@ -203,6 +204,37 @@ def generate_racing_screenshots():
     save_screenshot(env, "racing_screenshot_game_over")
 
 
+def generate_street_fighter_screenshots():
+    env = GymStreetFighterEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "street_fighter_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    env.x = [150.0, 200.0]
+    env.state = ["punch", "hitstun"]
+    env.hitstun[1] = 5
+    env.sparks.append({"x": 175.0, "y": 200.0, "lifetime": 4})
+    env.fireballs.append({
+        "x": 280.0,
+        "y": 200.0,
+        "dir": -1,
+        "owner": 1,
+        "speed": 5.0,
+        "active": True
+    })
+    save_screenshot(env, "street_fighter_screenshot_mid_game")
+    
+    # Game Over
+    env.reset(seed=42)
+    env.health = [40, 0]
+    env.state = ["idle", "knockdown"]
+    env.knockdown[1] = 15
+    save_screenshot(env, "street_fighter_screenshot_game_over")
+
+
 def main():
     print("Generating 2048 screenshots...")
     env_2048 = Gym2048Env()
@@ -241,6 +273,9 @@ def main():
     print("Generating Paratrooper screenshots...")
     env_paratrooper = GymParatrooperEnv()
     generate_game_screenshots(env_paratrooper, "paratrooper_screenshot")
+
+    print("Generating Street Fighter screenshots...")
+    generate_street_fighter_screenshots()
 
 
 if __name__ == "__main__":

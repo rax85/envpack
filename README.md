@@ -51,6 +51,9 @@ env = gym.make('envpack/2048-v0')
 # To run Paratrooper
 # env = gym.make('envpack/Paratrooper-v0')
 
+# To run Street Fighter
+# env = gym.make('envpack/StreetFighter-v0')
+
 observation, info = env.reset()
 done = False
 
@@ -323,3 +326,31 @@ A Gymnasium environment for two-player simultaneous manual-transmission car raci
 | **Initial State** | ![Racing Initial State](screenshots/racing_screenshot_initial.png) |
 | **Mid-game** | ![Racing Mid-game State](screenshots/racing_screenshot_mid_game.png) |
 | **Game Over** | ![Racing Game Over State](screenshots/racing_screenshot_game_over.png) |
+
+### 5. Street Fighter (`envpack/StreetFighter-v0`)
+
+A Gymnasium environment for a simultaneous 2-player Street Fighter-style fighting game.
+
+*   **Action Space**: `MultiDiscrete([8, 8])` representing:
+    *   `action[0]`: Player 1 (Ryu) action.
+    *   `action[1]`: Player 2 (Ken) action.
+    *   Actions: `0`: IDLE, `1`: WALK_LEFT, `2`: WALK_RIGHT, `3`: JUMP, `4`: CROUCH, `5`: PUNCH, `6`: KICK, `7`: SPECIAL_FIREBALL
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(300, 400, 3)` representing the RGB screen view.
+    *   `'valid_mask'`: `Box(2, 8)` binary mask of valid actions.
+    *   `'health'`: `Box(2,)` representing players' health `[0..100]`.
+    *   `'total_score'`: `Box(2,)` representing wins for Ryu and Ken.
+*   **Combat Mechanics**:
+    *   **PUNCH**: reach 25, damage 5, hitstun 8 steps.
+    *   **KICK**: reach 35, damage 8, hitstun 12 steps.
+    *   **SPECIAL_FIREBALL**: projects a projectile (cyan for Ryu, orange for Ken) moving at speed 5. Deals 10 damage. Fireballs cancel each other out on collision.
+    *   **Blocking**: holding backward relative to opponent (moving away) or crouching and holding backward blocks incoming high/low attacks, reducing damage to 0 and preventing hitstun.
+    *   **Combos**: consecutive hits within 15 steps increment the combo counter, shown on screen (e.g. "3 HIT COMBO!").
+    *   **Match Rules**: first to 2 round wins wins the match.
+*   **Screenshots**:
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Street Fighter Initial State](screenshots/street_fighter_screenshot_initial.png) |
+| **Mid-game** | ![Street Fighter Mid-game State](screenshots/street_fighter_screenshot_mid_game.png) |
+| **Game Over** | ![Street Fighter Game Over State](screenshots/street_fighter_screenshot_game_over.png) |
