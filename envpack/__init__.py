@@ -74,4 +74,22 @@ register(
     max_episode_steps=1000,
 )
 
+register(
+    id="envpack/TankCombat-v0",
+    entry_point="envpack.envs.game_tank_combat.env:GymTankCombatEnv",
+    max_episode_steps=1000,
+)
+
+register(
+    id="envpack/GravityDuel-v0",
+    entry_point="envpack.envs.game_gravity_duel.env:GymGravityDuelEnv",
+    max_episode_steps=1000,
+)
+
+register(
+    id="envpack/ArtilleryForts-v0",
+    entry_point="envpack.envs.game_artillery_forts.env:GymArtilleryFortsEnv",
+    max_episode_steps=1000,
+)
+
 

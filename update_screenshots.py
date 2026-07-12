@@ -1,4 +1,5 @@
 import os
+import math
 import numpy as np
 from PIL import Image
 from envpack.envs.game_2048.env import Gym2048Env
@@ -13,6 +14,9 @@ from envpack.envs.game_racing.env import GymRacingEnv
 from envpack.envs.game_doom.env import GymDoomEnv
 from envpack.envs.game_paratrooper.env import GymParatrooperEnv
 from envpack.envs.game_street_fighter.env import GymStreetFighterEnv
+from envpack.envs.game_tank_combat.env import GymTankCombatEnv
+from envpack.envs.game_gravity_duel.env import GymGravityDuelEnv
+from envpack.envs.game_artillery_forts.env import GymArtilleryFortsEnv
 
 
 
@@ -235,6 +239,94 @@ def generate_street_fighter_screenshots():
     save_screenshot(env, "street_fighter_screenshot_game_over")
 
 
+def generate_tank_combat_screenshots():
+    env = GymTankCombatEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "tank_combat_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    env._p1_pos = np.array([140.0, 140.0], dtype=np.float32)
+    env._p1_angle = 0.5
+    env._p2_pos = np.array([260.0, 140.0], dtype=np.float32)
+    env._p2_angle = math.pi - 0.5
+    env._bullets.append({
+        "pos": [180.0, 150.0],
+        "vel": [4.0, 2.0],
+        "owner": 0,
+        "bounces": 1
+    })
+    save_screenshot(env, "tank_combat_screenshot_mid_game")
+    
+    # Game Over
+    env.reset(seed=42)
+    env._scores = np.array([5, 3], dtype=np.int32)
+    env._p2_hp = 0
+    save_screenshot(env, "tank_combat_screenshot_game_over")
+
+
+def generate_gravity_duel_screenshots():
+    env = GymGravityDuelEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "gravity_duel_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    env._p1_pos = np.array([120.0, 160.0], dtype=np.float32)
+    env._p1_vel = np.array([1.0, -1.0], dtype=np.float32)
+    env._p1_thrust_active = True
+    env._p2_pos = np.array([280.0, 240.0], dtype=np.float32)
+    env._p2_vel = np.array([-1.0, 1.0], dtype=np.float32)
+    env._p2_thrust_active = False
+    env._missiles.append({
+        "pos": [160.0, 180.0],
+        "vel": [3.0, 1.0],
+        "owner": 0,
+        "lifetime": 100,
+        "trail": [[150.0, 175.0], [160.0, 180.0]]
+    })
+    save_screenshot(env, "gravity_duel_screenshot_mid_game")
+    
+    # Game Over
+    env.reset(seed=42)
+    env._scores = np.array([1, 3], dtype=np.int32)
+    save_screenshot(env, "gravity_duel_screenshot_game_over")
+
+
+def generate_artillery_forts_screenshots():
+    env = GymArtilleryFortsEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "artillery_forts_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    for x in range(250, 310):
+        dist = abs(x - 280)
+        crater_depth = max(0, 30 - dist)
+        env._terrain[x] = max(120.0, env._terrain[x] + crater_depth)
+    env._shells.append({
+        "pos": [200.0, 180.0],
+        "vel": [5.0, -3.0],
+        "owner": 0
+    })
+    env._explosions.append({
+        "pos": [280.0, 220.0],
+        "timer": 4
+    })
+    save_screenshot(env, "artillery_forts_screenshot_mid_game")
+    
+    # Game Over
+    env.reset(seed=42)
+    env._p2_hp = 0
+    save_screenshot(env, "artillery_forts_screenshot_game_over")
+
+
 def main():
     print("Generating 2048 screenshots...")
     env_2048 = Gym2048Env()
@@ -276,6 +368,15 @@ def main():
 
     print("Generating Street Fighter screenshots...")
     generate_street_fighter_screenshots()
+
+    print("Generating Tank Combat screenshots...")
+    generate_tank_combat_screenshots()
+
+    print("Generating Gravity Duel screenshots...")
+    generate_gravity_duel_screenshots()
+
+    print("Generating Artillery Forts screenshots...")
+    generate_artillery_forts_screenshots()
 
 
 if __name__ == "__main__":

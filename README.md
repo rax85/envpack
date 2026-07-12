@@ -54,6 +54,15 @@ env = gym.make('envpack/2048-v0')
 # To run Street Fighter
 # env = gym.make('envpack/StreetFighter-v0')
 
+# To run Tank Combat
+# env = gym.make('envpack/TankCombat-v0')
+
+# To run Gravity Duel
+# env = gym.make('envpack/GravityDuel-v0')
+
+# To run Artillery Forts
+# env = gym.make('envpack/ArtilleryForts-v0')
+
 observation, info = env.reset()
 done = False
 
@@ -354,3 +363,76 @@ A Gymnasium environment for a simultaneous 2-player Street Fighter-style fightin
 | **Initial State** | ![Street Fighter Initial State](screenshots/street_fighter_screenshot_initial.png) |
 | **Mid-game** | ![Street Fighter Mid-game State](screenshots/street_fighter_screenshot_mid_game.png) |
 | **Game Over** | ![Street Fighter Game Over State](screenshots/street_fighter_screenshot_game_over.png) |
+
+### 6. Tank Combat (`envpack/TankCombat-v0`)
+
+A Gymnasium environment for two-player simultaneous Tank Combat in a grid maze.
+
+*   **Action Space**: `MultiDiscrete([5, 5])` representing:
+    *   `action[0]`: Player 1 action.
+    *   `action[1]`: Player 2 action.
+    *   Actions: `0`: IDLE, `1`: Rotate Left, `2`: Rotate Right, `3`: Move Forward, `4`: Shoot.
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(18,)` vector representing coordinates and velocities:
+        *   `[p1_x, p1_y, cos(p1_angle), sin(p1_angle), p1_hp, p2_x, p2_y, cos(p2_angle), sin(p2_angle), p2_hp, b1_x, b1_y, b1_vx, b1_vy, b2_x, b2_y, b2_vx, b2_vy]`.
+    *   `'total_score'`: `Box(2,)` representing match score (wins).
+*   **Combat Mechanics**:
+    *   **Movement**: Sliding wall collision in a 10x10 maze grid.
+    *   **Bullets**: sub-step precision, bounce off walls up to 2 times, deal 1 damage to tanks on hit. Respawn on HP depletion.
+    *   **HP**: Max 3 HP, drawn as heart HUD symbols. First to 5 wins the match.
+*   **Screenshots**:
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Tank Combat Initial State](screenshots/tank_combat_screenshot_initial.png) |
+| **Mid-game** | ![Tank Combat Mid-game State](screenshots/tank_combat_screenshot_mid_game.png) |
+| **Game Over** | ![Tank Combat Game Over State](screenshots/tank_combat_screenshot_game_over.png) |
+
+### 7. Gravity Duel (`envpack/GravityDuel-v0`)
+
+A Gymnasium environment for two-player continuous Gravity Duel with a central gravity star.
+
+*   **Action Space**: `MultiDiscrete([5, 5])` representing:
+    *   `action[0]`: Player 1 action.
+    *   `action[1]`: Player 2 action.
+    *   Actions: `0`: IDLE, `1`: Rotate Left, `2`: Rotate Right, `3`: Thrust, `4`: Fire Missile.
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(24,)` representing:
+        *   `[p1_x, p1_y, p1_vx, p1_vy, cos(p1_angle), sin(p1_angle), p1_hp, p2_x, p2_y, p2_vx, p2_vy, cos(p2_angle), sin(p2_angle), p2_hp, star_x, star_y, m1_x, m1_y, m1_vx, m1_vy, m2_x, m2_y, m2_vx, m2_vy]`.
+    *   `'total_score'`: `Box(2,)` representing match score (wins).
+*   **Combat & Gravity Mechanics**:
+    *   **Newtonian Thrusters**: Inertial sliding and thrust velocity vectors.
+    *   **Warp Wrap-around**: Ships wrap around boundaries on all screen edges.
+    *   **Concentric Star Gravity**: A massive sun in the center pulls ships and missiles with $1/r^2$ gravity. Colliding with the sun instantly absorbs/destroys the ship.
+*   **Screenshots**:
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Gravity Duel Initial State](screenshots/gravity_duel_screenshot_initial.png) |
+| **Mid-game** | ![Gravity Duel Mid-game State](screenshots/gravity_duel_screenshot_mid_game.png) |
+| **Game Over** | ![Gravity Duel Game Over State](screenshots/gravity_duel_screenshot_game_over.png) |
+
+### 8. Artillery Forts (`envpack/ArtilleryForts-v0`)
+
+A Gymnasium environment for two-player simultaneous real-time Artillery Forts.
+
+*   **Action Space**: `MultiDiscrete([6, 6])` representing:
+    *   `action[0]`: Player 1 action.
+    *   `action[1]`: Player 2 action.
+    *   Actions: `0`: IDLE, `1`: Aim Up, `2`: Aim Down, `3`: Power Up, `4`: Power Down, `5`: Fire.
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(49,)` containing:
+        *   `[p1_y, p1_angle, p1_power, p1_hp, p1_cooldown, p2_y, p2_angle, p2_power, p2_hp, p2_cooldown, wind, s1_x, s1_y, s1_vx, s1_vy, s2_x, s2_y, s2_vx, s2_vy]` and 30 sampled terrain heights.
+    *   `'total_score'`: `Box(2,)` representing wins.
+*   **Artillery & Cratering Mechanics**:
+    *   **Wind Resistance**: Horizontal wind vectors alter trajectory paths.
+    *   **Procedural Crater Cratering**: Shell impacts explode and excavate terrain, creating circular holes in the mountain line.
+    *   **Dynamic Landslide Fall**: Forts fall vertically down if their supporting terrain is cleared.
+*   **Screenshots**:
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Artillery Forts Initial State](screenshots/artillery_forts_screenshot_initial.png) |
+| **Mid-game** | ![Artillery Forts Mid-game State](screenshots/artillery_forts_screenshot_mid_game.png) |
+| **Game Over** | ![Artillery Forts Game Over State](screenshots/artillery_forts_screenshot_game_over.png) |
+
