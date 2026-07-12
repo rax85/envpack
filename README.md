@@ -48,6 +48,9 @@ env = gym.make('envpack/2048-v0')
 # To run Doom
 # env = gym.make('envpack/Doom-v0')
 
+# To run Paratrooper
+# env = gym.make('envpack/Paratrooper-v0')
+
 observation, info = env.reset()
 done = False
 
@@ -190,6 +193,33 @@ A pseudo-3D first-person shooter Gymnasium environment using JIT-accelerated ray
 | **Initial State** | ![Doom Initial State](screenshots/doom_screenshot_initial.png) |
 | **Mid-game** | ![Doom Mid-game State](screenshots/doom_screenshot_mid_game.png) |
 | **Game Over** | ![Doom Game Over State](screenshots/doom_screenshot_game_over.png) |
+
+### 7. Paratrooper (`envpack/Paratrooper-v0`)
+
+A Gymnasium environment for the classic DOS-style Paratrooper arcade game.
+
+*   **Action Space**: `Discrete(4)`:
+    *   `0`: Turn Left, `1`: Turn Right, `2`: Shoot, `3`: Stay
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(300, 400, 3)` representing the screen view.
+    *   `'valid_mask'`: `Box(4,)` binary mask of valid actions.
+    *   `'score'`: `Box(1,)` representing the accumulated score.
+    *   `'landed_left'`: `Box(1,)` representing the number of paratroopers landed on the left side `[0..4]`.
+    *   `'landed_right'`: `Box(1,)` representing the number of paratroopers landed on the right side `[0..4]`.
+*   **Rewards**:
+    *   Shooting a helicopter: `+10.0` (score +10)
+    *   Shooting a paratrooper body: `+5.0` (score +5)
+    *   Shooting a parachute canopy: `+0.0` (score +0, but they fall fast and splat)
+    *   Shooting a bomb: `+15.0` (score +15)
+    *   Firing penalty: `-0.01` to discourage infinite shooting
+    *   Game over (turret destroyed by bomb or paratroopers): `-50.0`
+*   **Screenshots**:
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Paratrooper Initial State](screenshots/paratrooper_screenshot_initial.png) |
+| **Mid-game** | ![Paratrooper Mid-game State](screenshots/paratrooper_screenshot_mid_game.png) |
+| **Game Over** | ![Paratrooper Game Over State](screenshots/paratrooper_screenshot_game_over.png) |
 
 ---
 

@@ -11,6 +11,7 @@ from envpack.envs.game_tron.env import GymTronEnv
 from envpack.envs.game_air_hockey.env import GymAirHockeyEnv
 from envpack.envs.game_racing.env import GymRacingEnv
 from envpack.envs.game_doom.env import GymDoomEnv
+from envpack.envs.game_paratrooper.env import GymParatrooperEnv
 
 
 
@@ -236,6 +237,10 @@ def main():
     print("Generating Doom screenshots...")
     env_doom = GymDoomEnv()
     generate_game_screenshots(env_doom, "doom_screenshot")
+
+    print("Generating Paratrooper screenshots...")
+    env_paratrooper = GymParatrooperEnv()
+    generate_game_screenshots(env_paratrooper, "paratrooper_screenshot")
 
 
 if __name__ == "__main__":

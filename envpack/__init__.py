@@ -62,3 +62,9 @@ register(
     max_episode_steps=500,
 )
 
+register(
+    id="envpack/Paratrooper-v0",
+    entry_point="envpack.envs.game_paratrooper.env:GymParatrooperEnv",
+    max_episode_steps=1000,
+)
+
