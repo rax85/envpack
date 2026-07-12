@@ -51,6 +51,18 @@ env = gym.make('envpack/2048-v0')
 # To run Paratrooper
 # env = gym.make('envpack/Paratrooper-v0')
 
+# To run Pacman
+# env = gym.make('envpack/Pacman-v0')
+
+# To run Platformer
+# env = gym.make('envpack/Platformer-v0')
+
+# To run Tower Defense
+# env = gym.make('envpack/TowerDefense-v0')
+
+# To run Asteroids
+# env = gym.make('envpack/Asteroids-v0')
+
 # To run Street Fighter
 # env = gym.make('envpack/StreetFighter-v0')
 
@@ -232,6 +244,99 @@ A Gymnasium environment for the classic DOS-style Paratrooper arcade game.
 | **Initial State** | ![Paratrooper Initial State](screenshots/paratrooper_screenshot_initial.png) |
 | **Mid-game** | ![Paratrooper Mid-game State](screenshots/paratrooper_screenshot_mid_game.png) |
 | **Game Over** | ![Paratrooper Game Over State](screenshots/paratrooper_screenshot_game_over.png) |
+
+### 8. Pacman (`envpack/Pacman-v0`)
+
+A Gymnasium environment for the classic Pacman arcade maze crawler.
+
+*   **Action Space**: `Discrete(4)`:
+    *   `0`: Up, `1`: Down, `2`: Left, `3`: Right
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(300, 400, 3)` representing the RGB screen view.
+    *   `'valid_mask'`: `Box(4,)` binary mask of valid actions.
+    *   `'score'`: `Box(1,)` representing accumulated score.
+    *   `'lives'`: `Box(1,)` representing remaining lives `[0..3]`.
+*   **Mechanics**:
+    *   Navigate a 15x15 wall grid maze to eat dots (+10 points) and power pellets (+50 points).
+    *   **Ghost AI**: 4 ghosts with distinct target targeting heuristics (Blinky, Pinky, Inky, Clyde).
+    *   **Frightened Mode**: Eating a power pellet turns ghosts blue/frightened for 40 steps, reducing their speed and allowing Pacman to eat them for +200 points.
+*   **Screenshots**:
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Pacman Initial State](screenshots/pacman_screenshot_initial.png) |
+| **Mid-game** | ![Pacman Mid-game State](screenshots/pacman_screenshot_mid_game.png) |
+| **Game Over** | ![Pacman Game Over State](screenshots/pacman_screenshot_game_over.png) |
+
+### 9. Platformer (`envpack/Platformer-v0`)
+
+A Gymnasium environment for a side-scrolling 2D platformer.
+
+*   **Action Space**: `Discrete(4)`:
+    *   `0`: Idle, `1`: Move Left, `2`: Move Right, `3`: Jump
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(300, 400, 3)` representing the screen view with camera tracking.
+    *   `'valid_mask'`: `Box(4,)` binary mask of valid actions.
+    *   `'level_progress'`: `Box(1,)` representing normalized level completion.
+*   **Physics & Platforming**:
+    *   Horizontal velocity accumulation (inertia), drag, and vertical gravity.
+    *   Strict AABB solid block collision resolution.
+    *   Collect gold coins (+10 points) and dodge spikes (death and level reset). Reach the flag at `x=750` to win (+50 reward).
+*   **Screenshots**:
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Platformer Initial State](screenshots/platformer_screenshot_initial.png) |
+| **Mid-game** | ![Platformer Mid-game State](screenshots/platformer_screenshot_mid_game.png) |
+| **Game Over** | ![Platformer Game Over State](screenshots/platformer_screenshot_game_over.png) |
+
+### 10. Tower Defense (`envpack/TowerDefense-v0`)
+
+A Gymnasium environment for a wave-based Tower Defense game.
+
+*   **Action Space**: `Discrete(13)`:
+    *   `0`: Idle
+    *   `1-6`: Build/Upgrade Gun Tower at slots 0-5 (costs 50 gold)
+    *   `7-12`: Build/Upgrade Laser Tower at slots 0-5 (costs 80 gold)
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(300, 400, 3)` representing the path, towers, and marching enemies.
+    *   `'valid_mask'`: `Box(13,)` binary mask of valid actions.
+    *   `'health'`: `Box(1,)` representing base health `[0..20]`.
+    *   `'gold'`: `Box(1,)` representing gold bank.
+*   **Tower & Wave Mechanics**:
+    *   Enemies spawn in waves, walking along an S-shaped path. Reaching the end drains 1 life.
+    *   Gun towers fire projectile bullets. Laser towers project a continuous target-locked energy beam.
+    *   Upgrading towers increases fire range and damage.
+*   **Screenshots**:
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Tower Defense Initial State](screenshots/tower_defense_screenshot_initial.png) |
+| **Mid-game** | ![Tower Defense Mid-game State](screenshots/tower_defense_screenshot_mid_game.png) |
+| **Game Over** | ![Tower Defense Game Over State](screenshots/tower_defense_screenshot_game_over.png) |
+
+### 11. Asteroids (`envpack/Asteroids-v0`)
+
+A Gymnasium environment for a wrapping space Asteroids miner.
+
+*   **Action Space**: `Discrete(5)`:
+    *   `0`: Idle, `1`: Rotate Left, `2`: Rotate Right, `3`: Thrust, `4`: Shoot
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(300, 400, 3)` representing the space field.
+    *   `'valid_mask'`: `Box(5,)` binary mask of valid actions.
+    *   `'score'`: `Box(1,)` representing accumulated score.
+    *   `'lives'`: `Box(1,)` representing remaining lives `[0..3]`.
+*   **Spaceship & Debris Physics**:
+    *   Newtonian vector acceleration with friction damping (drag = 0.99).
+    *   Toroidal wrap-around bounds. Fired lasers break Large asteroids (radius 24) into Medium (radius 12), which break into Small (radius 6).
+    *   Splitting asteroids drops floating gems (+5 points) which must be collected. Collisions with asteroids deduct 1 life.
+*   **Screenshots**:
+
+| State | Visual |
+| :---: | :---: |
+| **Initial State** | ![Asteroids Initial State](screenshots/asteroids_screenshot_initial.png) |
+| **Mid-game** | ![Asteroids Mid-game State](screenshots/asteroids_screenshot_mid_game.png) |
+| **Game Over** | ![Asteroids Game Over State](screenshots/asteroids_screenshot_game_over.png) |
 
 ---
 

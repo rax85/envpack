@@ -92,4 +92,29 @@ register(
     max_episode_steps=1000,
 )
 
+register(
+    id="envpack/Pacman-v0",
+    entry_point="envpack.envs.game_pacman.env:GymPacmanEnv",
+    max_episode_steps=1000,
+)
+
+register(
+    id="envpack/Platformer-v0",
+    entry_point="envpack.envs.game_platformer.env:GymPlatformerEnv",
+    max_episode_steps=1000,
+)
+
+register(
+    id="envpack/TowerDefense-v0",
+    entry_point="envpack.envs.game_tower_defense.env:GymTowerDefenseEnv",
+    max_episode_steps=1000,
+)
+
+register(
+    id="envpack/Asteroids-v0",
+    entry_point="envpack.envs.game_asteroids.env:GymAsteroidsEnv",
+    max_episode_steps=1000,
+)
+
+
 

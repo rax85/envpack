@@ -17,6 +17,10 @@ from envpack.envs.game_street_fighter.env import GymStreetFighterEnv
 from envpack.envs.game_tank_combat.env import GymTankCombatEnv
 from envpack.envs.game_gravity_duel.env import GymGravityDuelEnv
 from envpack.envs.game_artillery_forts.env import GymArtilleryFortsEnv
+from envpack.envs.game_pacman.env import GymPacmanEnv
+from envpack.envs.game_platformer.env import GymPlatformerEnv
+from envpack.envs.game_tower_defense.env import GymTowerDefenseEnv
+from envpack.envs.game_asteroids.env import GymAsteroidsEnv
 
 
 
@@ -327,6 +331,125 @@ def generate_artillery_forts_screenshots():
     save_screenshot(env, "artillery_forts_screenshot_game_over")
 
 
+def generate_pacman_screenshots():
+    env = GymPacmanEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "pacman_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    env.pacman_pos = (7, 8)
+    env.frightened_timer = 30
+    save_screenshot(env, "pacman_screenshot_mid_game")
+    
+    # Game Over
+    env.reset(seed=42)
+    env.lives = 0
+    save_screenshot(env, "pacman_screenshot_game_over")
+
+
+def generate_platformer_screenshots():
+    env = GymPlatformerEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "platformer_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    env.px = 380.0
+    env.py = 140.0
+    env.vx = 2.0
+    env.vy = -3.5
+    env.score = 50
+    save_screenshot(env, "platformer_screenshot_mid_game")
+    
+    # Game Over
+    env.reset(seed=42)
+    env.px = 750.0
+    env.py = 220.0
+    env.score = 120
+    save_screenshot(env, "platformer_screenshot_game_over")
+
+
+def generate_tower_defense_screenshots():
+    env = GymTowerDefenseEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "tower_defense_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    env.gold = 180
+    env.score = 25
+    env.towers[0] = {"type": 1, "level": 2, "cooldown": 0, "target_id": 101}
+    env.towers[4] = {"type": 2, "level": 1, "cooldown": 0, "target_id": 102}
+    env.enemies[101] = {
+        "id": 101,
+        "x": 150.0,
+        "y": 50.0,
+        "hp": 25.0,
+        "max_hp": 40.0,
+        "speed": 1.2,
+        "target_idx": 1,
+        "gold_reward": 15
+    }
+    env.enemies[102] = {
+        "id": 102,
+        "x": 200.0,
+        "y": 210.0,
+        "hp": 30.0,
+        "max_hp": 30.0,
+        "speed": 1.0,
+        "target_idx": 4,
+        "gold_reward": 15
+    }
+    env.bullets.append({
+        "x": 120.0,
+        "y": 70.0,
+        "target_id": 101,
+        "damage": 5.0
+    })
+    save_screenshot(env, "tower_defense_screenshot_mid_game")
+    
+    # Game Over
+    env.reset(seed=42)
+    env.health = 0
+    save_screenshot(env, "tower_defense_screenshot_game_over")
+
+
+def generate_asteroids_screenshots():
+    env = GymAsteroidsEnv()
+    
+    # Initial
+    env.reset(seed=42)
+    save_screenshot(env, "asteroids_screenshot_initial")
+    
+    # Mid-game
+    env.reset(seed=42)
+    env.ship_px = 200.0
+    env.ship_py = 150.0
+    env.ship_angle = -math.pi / 4
+    env.score = 450
+    env.asteroids = [
+        {"x": 100.0, "y": 80.0, "vx": 0.5, "vy": -0.3, "radius": 24.0, "rot": 0.5, "rot_speed": 0.02, "multipliers": [1.0, 0.9, 1.1, 1.0, 0.85, 1.0, 1.05, 0.95]},
+        {"x": 300.0, "y": 200.0, "vx": -0.8, "vy": 0.4, "radius": 12.0, "rot": 1.2, "rot_speed": -0.01, "multipliers": [1.0] * 8},
+        {"x": 150.0, "y": 220.0, "vx": 0.2, "vy": 0.6, "radius": 6.0, "rot": 2.1, "rot_speed": 0.03, "multipliers": [1.0] * 8}
+    ]
+    env.lasers = [
+        {"x": 220.0, "y": 130.0, "vx": 3.0, "vy": -3.0, "lifetime": 30}
+    ]
+    save_screenshot(env, "asteroids_screenshot_mid_game")
+    
+    # Game Over
+    env.reset(seed=42)
+    env.lives = 0
+    save_screenshot(env, "asteroids_screenshot_game_over")
+
+
 def main():
     print("Generating 2048 screenshots...")
     env_2048 = Gym2048Env()
@@ -377,6 +500,18 @@ def main():
 
     print("Generating Artillery Forts screenshots...")
     generate_artillery_forts_screenshots()
+
+    print("Generating Pacman screenshots...")
+    generate_pacman_screenshots()
+
+    print("Generating Platformer screenshots...")
+    generate_platformer_screenshots()
+
+    print("Generating Tower Defense screenshots...")
+    generate_tower_defense_screenshots()
+
+    print("Generating Asteroids screenshots...")
+    generate_asteroids_screenshots()
 
 
 if __name__ == "__main__":
