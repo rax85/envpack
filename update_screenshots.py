@@ -27,6 +27,8 @@ from envpack.envs.game_tower_defense.env import GymTowerDefenseEnv
 from envpack.envs.game_asteroids.env import GymAsteroidsEnv
 from envpack.envs.game_space_invaders.env import GymSpaceInvadersEnv
 from envpack.envs.game_battleship.env import GymBattleshipEnv
+from envpack.envs.game_drone.env import GymDroneEnv
+
 
 
 
@@ -126,7 +128,9 @@ def main():
         (GymAsteroidsEnv(), "asteroids_screenshot"),
         (GymSpaceInvadersEnv(), "space_invaders_screenshot"),
         (GymBattleshipEnv(), "battleship_screenshot"),
+        (GymDroneEnv(), "drone_screenshot"),
     ]
+
 
     
     for env, name in envs:

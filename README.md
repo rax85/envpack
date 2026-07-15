@@ -66,6 +66,10 @@ env = gym.make('envpack/2048-v0')
 # To run Space Invaders
 # env = gym.make('envpack/SpaceInvaders-v0')
 
+# To run Drone
+# env = gym.make('envpack/Drone-v0')
+
+
 
 # To run Street Fighter
 # env = gym.make('envpack/StreetFighter-v0')
@@ -321,7 +325,32 @@ A Gymnasium environment for the classic arcade game Space Invaders.
 
 ![Space Invaders Gameplay](screenshots/space_invaders_screenshot.gif)
 
+### 13. Fixed-Wing Autopilot Drone (`envpack/Drone-v0`)
+
+A Gymnasium environment for a physically accurate fixed-wing drone flight simulator.
+
+*   **Action Space**: `Box(low=[0.0, -1.0, -1.0, -1.0], high=[1.0, 1.0, 1.0, 1.0], shape=(4,), dtype=np.float32)` representing:
+    *   `action[0]`: Throttle control `[0.0, 1.0]`.
+    *   `action[1]`: Elevator pitch rate control `[-1.0, 1.0]` (nose up/down).
+    *   `action[2]`: Aileron roll rate control `[-1.0, 1.0]` (bank left/right).
+    *   `action[3]`: Rudder yaw rate control `[-1.0, 1.0]` (yaw left/right).
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(12,)` containing:
+        *   `[x, y, z, vx, vy, vz, pitch, roll, yaw, fuel, dist_to_target, heading_error]` (where `y` is altitude).
+    *   `'valid_mask'`: `Box(4,)` binary mask of valid actions (always `[1, 1, 1, 1]`).
+*   **Flight Dynamics & Mechanics**:
+    *   Physically accurate aerodynamic simulation: lift, drag (parasitic and lift-induced drag), thrust, and gravity. Includes wing stall when the Angle of Attack (AoA) exceeds 16 degrees.
+    *   Take off from Runway 1 and navigate through a procedurally generated 2000m x 2000m landscape heightmap to perform a flat, soft landing on Runway 2.
+    *   Crashes (touching the ground at high speeds, rolled wings, or outside the target runway) instantly terminate the simulation. Lower fuel consumption is rewarded.
+    *   A minimum Above Ground Level (AGL) of 15m is penalized if violated while away from the airstrips.
+*   **Gameplay / Visualization**:
+    *   Renders a 3D wireframe chase-view looking ahead along the drone's flight path, a cockpit flight HUD (Speed, Alt/AGL, Pitch/Roll ladder, Fuel), and a 2D overview map.
+*   **Gameplay**:
+
+![Drone Gameplay](screenshots/drone_screenshot.gif)
+
 ---
+
 
 
 ## 👥 Two Player Games

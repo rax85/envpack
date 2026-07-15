@@ -128,6 +128,13 @@ register(
     max_episode_steps=500,
 )
 
+register(
+    id="envpack/Drone-v0",
+    entry_point="envpack.envs.game_drone.env:GymDroneEnv",
+    max_episode_steps=1000,
+)
+
+
 
 
 
