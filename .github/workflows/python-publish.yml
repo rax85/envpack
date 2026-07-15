@@ -29,16 +29,18 @@ jobs:
       - name: Update version from tag
         run: |
           TAG_NAME="${{ github.event.release.tag_name }}"
-          VERSION="${TAG_NAME#v}"
-          echo "Updating pyproject.toml version to $VERSION"
+          CLEAN_VERSION="${TAG_NAME#v}"
+          echo "Updating pyproject.toml version to $CLEAN_VERSION"
           python -c "
           import re
+          version = '$CLEAN_VERSION'
           with open('pyproject.toml', 'r') as f:
               content = f.read()
-          content = re.sub(r'version\s*=\s*\"[^\"]+\"', f'version = \"{VERSION}\"', content, count=1)
+          content = re.sub(r'version\s*=\s*\"[^\"]+\"', f'version = \"{version}\"', content, count=1)
           with open('pyproject.toml', 'w') as f:
               f.write(content)
           "
+
 
       - name: Build release distributions
         run: |
