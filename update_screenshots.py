@@ -1,7 +1,11 @@
 import os
-import math
+import random
 import numpy as np
+import gymnasium as gym
+from gymnasium import spaces
 from PIL import Image
+
+# Import environments
 from envpack.envs.game_2048.env import Gym2048Env
 from envpack.envs.game_snake.env import GymSnakeEnv
 from envpack.envs.game_tetris.env import GymTetrisEnv
@@ -23,495 +27,105 @@ from envpack.envs.game_tower_defense.env import GymTowerDefenseEnv
 from envpack.envs.game_asteroids.env import GymAsteroidsEnv
 
 
+def sample_action(env, obs):
+    if isinstance(obs, dict) and "valid_mask" in obs:
+        mask = obs["valid_mask"]
+        
+        # 1. Discrete action space
+        if isinstance(env.action_space, spaces.Discrete):
+            valid_indices = np.argwhere(mask > 0)
+            if len(valid_indices) > 0:
+                return int(np.random.choice(valid_indices.flatten()))
+                
+        # 2. MultiDiscrete action space
+        elif isinstance(env.action_space, spaces.MultiDiscrete):
+            # Case A: mask represents the joint action space (e.g. Checkers, Sudoku)
+            if mask.shape == tuple(env.action_space.nvec):
+                valid_indices = np.argwhere(mask > 0)
+                if len(valid_indices) > 0:
+                    idx = np.random.choice(len(valid_indices))
+                    return valid_indices[idx].astype(env.action_space.dtype)
+            
+            # Case B: mask represents independent action spaces for each component (e.g. Street Fighter)
+            elif len(mask.shape) == 2 and mask.shape[0] == len(env.action_space.nvec):
+                action = []
+                for i in range(len(env.action_space.nvec)):
+                    component_mask = mask[i]
+                    valid_indices = np.argwhere(component_mask > 0)
+                    if len(valid_indices) > 0:
+                        act = np.random.choice(valid_indices.flatten())
+                    else:
+                        act = np.random.randint(env.action_space.nvec[i])
+                    action.append(act)
+                return np.array(action, dtype=env.action_space.dtype)
+                
+    # Fallback to standard action space sampling
+    return env.action_space.sample()
 
-def save_screenshot(env, name):
+
+def generate_game_gif(env, name_prefix, num_frames=30, duration=500):
+    # Set seeds for reproducibility
+    np.random.seed(42)
+    random.seed(42)
+    env.action_space.seed(42)
+    
+    obs, info = env.reset(seed=42)
+    
+    frames = []
+    # Capture initial frame
     rgb_data = env.render()
-    image = Image.fromarray(rgb_data)
+    frames.append(Image.fromarray(rgb_data))
+    
+    for _ in range(num_frames - 1):
+        action = sample_action(env, obs)
+        obs, reward, done, truncated, info = env.step(action)
+        
+        rgb_data = env.render()
+        frames.append(Image.fromarray(rgb_data))
+        
+        if done or truncated:
+            obs, info = env.reset()
+            
+    # Save as animated GIF
     os.makedirs("screenshots", exist_ok=True)
-    path = os.path.join("screenshots", f"{name}.png")
-    image.save(path)
+    path = os.path.join("screenshots", f"{name_prefix}.gif")
+    
+    frames[0].save(
+        path,
+        save_all=True,
+        append_images=frames[1:],
+        duration=duration,
+        loop=0
+    )
     print(f"Saved {path}")
 
 
-def generate_game_screenshots(env, name_prefix):
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, f"{name_prefix}_initial")
-
-    # Mid Game
-    env.action_space.seed(42)
-    for _ in range(50):
-        action = env.action_space.sample()
-        _, _, done, truncated, _ = env.step(action)
-        if done or truncated:
-            env.reset()
-    save_screenshot(env, f"{name_prefix}_mid_game")
-
-    # Game Over
-    done = False
-    truncated = False
-    max_steps = 10000
-    steps = 0
-    while not (done or truncated) and steps < max_steps:
-        action = env.action_space.sample()
-        obs, reward, done, truncated, info = env.step(action)
-        steps += 1
-    save_screenshot(env, f"{name_prefix}_game_over")
-
-
-def generate_sudoku_screenshots():
-    env = GymSudokuEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "sudoku_screenshot_initial")
-    
-    # Mid Game
-    env.reset(seed=42)
-    # Inject some move entries to showcase all text colors
-    env._grid[0, 4] = 1
-    env._grid[0, 1] = 2
-    env._grid[0, 2] = 2
-    env._grid[1, 3] = 3
-    env._move_history.append(((0, 1, 2), False))
-    env._move_history.append(((0, 2, 2), False))
-    env._move_history.append(((1, 3, 3), True))
-    save_screenshot(env, "sudoku_screenshot_mid_game")
-    
-    # Solved
-    env_solved = GymSudokuEnv(clues=80)
-    env_solved.reset(seed=42)
-    edit_r, edit_c = np.argwhere(env_solved._given_mask == 0)[0]
-    correct_val = env_solved._solved_grid[edit_r, edit_c]
-    env_solved.step(np.array([edit_r, edit_c, correct_val], dtype=np.int32))
-    save_screenshot(env_solved, "sudoku_screenshot_solved")
-
-
-def generate_raptor_screenshots():
-    env = GymRaptorEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "raptor_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    # Inject some items, enemies, bullets, lasers, and moves to showcase gameplay
-    env._enemies.append(([2, 2], 3)) # ENEMY_BASIC
-    env._enemies.append(([5, 7], 4)) # ENEMY_SHOOTER
-    env._bullets.append([7, 7])
-    env._coins.append([9, 10])
-    env._lasers.append([12, 5])
-    env.step(1) # LEFT
-    env.step(3) # UP
-    save_screenshot(env, "raptor_screenshot_mid_game")
-    
-    # Game Over
-    env.reset(seed=42)
-    env._shield = 0
-    save_screenshot(env, "raptor_screenshot_game_over")
-
-
-def generate_checkers_screenshots():
-    env = GymCheckersEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "checkers_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    env.step(np.array([5, 0, 4, 1], dtype=np.int32))
-    env.step(np.array([2, 1, 3, 0], dtype=np.int32))
-    env._grid[0, 1] = 2 # P1_KING
-    save_screenshot(env, "checkers_screenshot_mid_game")
-    
-    # Game Over (win state)
-    env.reset(seed=42)
-    env._grid = np.zeros((8, 8), dtype=np.int32)
-    env._grid[4, 4] = 1 # P1_NORMAL
-    env._grid[3, 3] = 3 # P2_NORMAL
-    env.step(np.array([4, 4, 2, 2], dtype=np.int32)) # P1 captures P2, P2 pieces count = 0 -> P1 wins!
-    save_screenshot(env, "checkers_screenshot_game_over")
-
-
-def generate_tron_screenshots():
-    env = GymTronEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "tron_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    # Move forward a few steps
-    env.step(np.array([3, 2], dtype=np.int32)) # RIGHT, LEFT
-    env.step(np.array([0, 1], dtype=np.int32)) # UP, DOWN
-    save_screenshot(env, "tron_screenshot_mid_game")
-    
-    # Game Over (crash)
-    env.reset(seed=42)
-    # Force them to crash head-on
-    env._grid = np.zeros((30, 30), dtype=np.int32)
-    env._p1_pos = (15, 14)
-    env._p2_pos = (15, 16)
-    env.step(np.array([3, 2], dtype=np.int32)) # RIGHT, LEFT -> crash head-on
-    save_screenshot(env, "tron_screenshot_game_over")
-
-
-def generate_air_hockey_screenshots():
-    env = GymAirHockeyEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "air_hockey_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    # Move mallets and push puck
-    env.step(np.array([[0.5, -0.5], [-0.5, 0.5]], dtype=np.float32))
-    save_screenshot(env, "air_hockey_screenshot_mid_game")
-    
-    # Game Over
-    env.reset(seed=42)
-    env._scores = np.array([7, 2], dtype=np.int32)
-    save_screenshot(env, "air_hockey_screenshot_game_over")
-
-
-def generate_racing_screenshots():
-    env = GymRacingEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "racing_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    # Add skidmarks, drift, and redline to display the engine HUD and tire dynamics
-    env._p1_x = 220.0
-    env._p1_y = 120.0
-    env._p1_theta = -0.5
-    env._p1_rpm = 7100.0
-    env._p1_gear = 2
-    env._p1_skids = [(210.0, 110.0), (205.0, 108.0)]
-    env._p2_x = 260.0
-    env._p2_y = 100.0
-    env._p2_theta = 0.5
-    env._p2_rpm = 5500.0
-    env._p2_gear = 3
-    env._p2_skids = [(270.0, 90.0), (275.0, 88.0)]
-    save_screenshot(env, "racing_screenshot_mid_game")
-    
-    # Game Over
-    env.reset(seed=42)
-    env._scores = np.array([1.0, 0.0], dtype=np.float32)
-    # Project winner P1 to end spline
-    end_idx = len(env._track_spline) - 1
-    env._p1_x, env._p1_y = env._track_spline[end_idx]
-    env._p1_progress = 1.0
-    save_screenshot(env, "racing_screenshot_game_over")
-
-
-def generate_street_fighter_screenshots():
-    env = GymStreetFighterEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "street_fighter_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    env.x = [150.0, 200.0]
-    env.state = ["punch", "hitstun"]
-    env.hitstun[1] = 5
-    env.sparks.append({"x": 175.0, "y": 200.0, "lifetime": 4})
-    env.fireballs.append({
-        "x": 280.0,
-        "y": 200.0,
-        "dir": -1,
-        "owner": 1,
-        "speed": 5.0,
-        "active": True
-    })
-    save_screenshot(env, "street_fighter_screenshot_mid_game")
-    
-    # Game Over
-    env.reset(seed=42)
-    env.health = [40, 0]
-    env.state = ["idle", "knockdown"]
-    env.knockdown[1] = 15
-    save_screenshot(env, "street_fighter_screenshot_game_over")
-
-
-def generate_tank_combat_screenshots():
-    env = GymTankCombatEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "tank_combat_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    env._p1_pos = np.array([140.0, 140.0], dtype=np.float32)
-    env._p1_angle = 0.5
-    env._p2_pos = np.array([260.0, 140.0], dtype=np.float32)
-    env._p2_angle = math.pi - 0.5
-    env._bullets.append({
-        "pos": [180.0, 150.0],
-        "vel": [4.0, 2.0],
-        "owner": 0,
-        "bounces": 1
-    })
-    save_screenshot(env, "tank_combat_screenshot_mid_game")
-    
-    # Game Over
-    env.reset(seed=42)
-    env._scores = np.array([5, 3], dtype=np.int32)
-    env._p2_hp = 0
-    save_screenshot(env, "tank_combat_screenshot_game_over")
-
-
-def generate_gravity_duel_screenshots():
-    env = GymGravityDuelEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "gravity_duel_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    env._p1_pos = np.array([120.0, 160.0], dtype=np.float32)
-    env._p1_vel = np.array([1.0, -1.0], dtype=np.float32)
-    env._p1_thrust_active = True
-    env._p2_pos = np.array([280.0, 240.0], dtype=np.float32)
-    env._p2_vel = np.array([-1.0, 1.0], dtype=np.float32)
-    env._p2_thrust_active = False
-    env._missiles.append({
-        "pos": [160.0, 180.0],
-        "vel": [3.0, 1.0],
-        "owner": 0,
-        "lifetime": 100,
-        "trail": [[150.0, 175.0], [160.0, 180.0]]
-    })
-    save_screenshot(env, "gravity_duel_screenshot_mid_game")
-    
-    # Game Over
-    env.reset(seed=42)
-    env._scores = np.array([1, 3], dtype=np.int32)
-    save_screenshot(env, "gravity_duel_screenshot_game_over")
-
-
-def generate_artillery_forts_screenshots():
-    env = GymArtilleryFortsEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "artillery_forts_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    for x in range(250, 310):
-        dist = abs(x - 280)
-        crater_depth = max(0, 30 - dist)
-        env._terrain[x] = max(120.0, env._terrain[x] + crater_depth)
-    env._shells.append({
-        "pos": [200.0, 180.0],
-        "vel": [5.0, -3.0],
-        "owner": 0
-    })
-    env._explosions.append({
-        "pos": [280.0, 220.0],
-        "timer": 4
-    })
-    save_screenshot(env, "artillery_forts_screenshot_mid_game")
-    
-    # Game Over
-    env.reset(seed=42)
-    env._p2_hp = 0
-    save_screenshot(env, "artillery_forts_screenshot_game_over")
-
-
-def generate_pacman_screenshots():
-    env = GymPacmanEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "pacman_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    env.pacman_pos = (7, 8)
-    env.frightened_timer = 30
-    save_screenshot(env, "pacman_screenshot_mid_game")
-    
-    # Game Over
-    env.reset(seed=42)
-    env.lives = 0
-    save_screenshot(env, "pacman_screenshot_game_over")
-
-
-def generate_platformer_screenshots():
-    env = GymPlatformerEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "platformer_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    env.px = 380.0
-    env.py = 140.0
-    env.vx = 2.0
-    env.vy = -3.5
-    env.score = 50
-    save_screenshot(env, "platformer_screenshot_mid_game")
-    
-    # Game Over
-    env.reset(seed=42)
-    env.px = 750.0
-    env.py = 220.0
-    env.score = 120
-    save_screenshot(env, "platformer_screenshot_game_over")
-
-
-def generate_tower_defense_screenshots():
-    env = GymTowerDefenseEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "tower_defense_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    env.gold = 180
-    env.score = 25
-    env.towers[0] = {"type": 1, "level": 2, "cooldown": 0, "target_id": 101}
-    env.towers[4] = {"type": 2, "level": 1, "cooldown": 0, "target_id": 102}
-    env.enemies[101] = {
-        "id": 101,
-        "x": 150.0,
-        "y": 50.0,
-        "hp": 25.0,
-        "max_hp": 40.0,
-        "speed": 1.2,
-        "target_idx": 1,
-        "gold_reward": 15
-    }
-    env.enemies[102] = {
-        "id": 102,
-        "x": 200.0,
-        "y": 210.0,
-        "hp": 30.0,
-        "max_hp": 30.0,
-        "speed": 1.0,
-        "target_idx": 4,
-        "gold_reward": 15
-    }
-    env.bullets.append({
-        "x": 120.0,
-        "y": 70.0,
-        "target_id": 101,
-        "damage": 5.0
-    })
-    save_screenshot(env, "tower_defense_screenshot_mid_game")
-    
-    # Game Over
-    env.reset(seed=42)
-    env.health = 0
-    save_screenshot(env, "tower_defense_screenshot_game_over")
-
-
-def generate_asteroids_screenshots():
-    env = GymAsteroidsEnv()
-    
-    # Initial
-    env.reset(seed=42)
-    save_screenshot(env, "asteroids_screenshot_initial")
-    
-    # Mid-game
-    env.reset(seed=42)
-    env.ship_px = 200.0
-    env.ship_py = 150.0
-    env.ship_angle = -math.pi / 4
-    env.score = 450
-    env.asteroids = [
-        {"x": 100.0, "y": 80.0, "vx": 0.5, "vy": -0.3, "radius": 24.0, "rot": 0.5, "rot_speed": 0.02, "multipliers": [1.0, 0.9, 1.1, 1.0, 0.85, 1.0, 1.05, 0.95]},
-        {"x": 300.0, "y": 200.0, "vx": -0.8, "vy": 0.4, "radius": 12.0, "rot": 1.2, "rot_speed": -0.01, "multipliers": [1.0] * 8},
-        {"x": 150.0, "y": 220.0, "vx": 0.2, "vy": 0.6, "radius": 6.0, "rot": 2.1, "rot_speed": 0.03, "multipliers": [1.0] * 8}
-    ]
-    env.lasers = [
-        {"x": 220.0, "y": 130.0, "vx": 3.0, "vy": -3.0, "lifetime": 30}
-    ]
-    save_screenshot(env, "asteroids_screenshot_mid_game")
-    
-    # Game Over
-    env.reset(seed=42)
-    env.lives = 0
-    save_screenshot(env, "asteroids_screenshot_game_over")
-
-
 def main():
-    print("Generating 2048 screenshots...")
-    env_2048 = Gym2048Env()
-    generate_game_screenshots(env_2048, "screenshot")
-
-    print("Generating Snake screenshots...")
-    env_snake = GymSnakeEnv()
-    generate_game_screenshots(env_snake, "snake_screenshot")
-
-    print("Generating Tetris screenshots...")
-    env_tetris = GymTetrisEnv()
-    generate_game_screenshots(env_tetris, "tetris_screenshot")
-
-    print("Generating Sudoku screenshots...")
-    generate_sudoku_screenshots()
-
-    print("Generating Raptor screenshots...")
-    generate_raptor_screenshots()
-
-    print("Generating Checkers screenshots...")
-    generate_checkers_screenshots()
-
-    print("Generating Tron screenshots...")
-    generate_tron_screenshots()
-
-    print("Generating Air Hockey screenshots...")
-    generate_air_hockey_screenshots()
-
-    print("Generating Racing screenshots...")
-    generate_racing_screenshots()
-
-    print("Generating Doom screenshots...")
-    env_doom = GymDoomEnv()
-    generate_game_screenshots(env_doom, "doom_screenshot")
-
-    print("Generating Paratrooper screenshots...")
-    env_paratrooper = GymParatrooperEnv()
-    generate_game_screenshots(env_paratrooper, "paratrooper_screenshot")
-
-    print("Generating Street Fighter screenshots...")
-    generate_street_fighter_screenshots()
-
-    print("Generating Tank Combat screenshots...")
-    generate_tank_combat_screenshots()
-
-    print("Generating Gravity Duel screenshots...")
-    generate_gravity_duel_screenshots()
-
-    print("Generating Artillery Forts screenshots...")
-    generate_artillery_forts_screenshots()
-
-    print("Generating Pacman screenshots...")
-    generate_pacman_screenshots()
-
-    print("Generating Platformer screenshots...")
-    generate_platformer_screenshots()
-
-    print("Generating Tower Defense screenshots...")
-    generate_tower_defense_screenshots()
-
-    print("Generating Asteroids screenshots...")
-    generate_asteroids_screenshots()
+    envs = [
+        (Gym2048Env(), "screenshot"),
+        (GymSnakeEnv(), "snake_screenshot"),
+        (GymTetrisEnv(), "tetris_screenshot"),
+        (GymSudokuEnv(), "sudoku_screenshot"),
+        (GymRaptorEnv(), "raptor_screenshot"),
+        (GymCheckersEnv(), "checkers_screenshot"),
+        (GymTronEnv(), "tron_screenshot"),
+        (GymAirHockeyEnv(), "air_hockey_screenshot"),
+        (GymRacingEnv(), "racing_screenshot"),
+        (GymDoomEnv(), "doom_screenshot"),
+        (GymParatrooperEnv(), "paratrooper_screenshot"),
+        (GymStreetFighterEnv(), "street_fighter_screenshot"),
+        (GymTankCombatEnv(), "tank_combat_screenshot"),
+        (GymGravityDuelEnv(), "gravity_duel_screenshot"),
+        (GymArtilleryFortsEnv(), "artillery_forts_screenshot"),
+        (GymPacmanEnv(), "pacman_screenshot"),
+        (GymPlatformerEnv(), "platformer_screenshot"),
+        (GymTowerDefenseEnv(), "tower_defense_screenshot"),
+        (GymAsteroidsEnv(), "asteroids_screenshot"),
+    ]
+    
+    for env, name in envs:
+        print(f"Generating {name}.gif...")
+        generate_game_gif(env, name)
 
 
 if __name__ == "__main__":

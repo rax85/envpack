@@ -103,13 +103,9 @@ A Gymnasium environment for the classic 2048 tile-merging game played on a 4x4 g
     *   `'valid_mask'`: `Box(4,)` binary mask of valid moves.
     *   `'total_score'`: `Box(1,)` representing the accumulated score.
 *   **Rewards**: Sum of merged tile values. Invalid moves yield `-32`.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![2048 Initial State](screenshots/screenshot_initial.png) |
-| **Mid-game** | ![2048 Mid-game State](screenshots/screenshot_mid_game.png) |
-| **Game Over** | ![2048 Game Over State](screenshots/screenshot_game_over.png) |
+![2048 Gameplay](screenshots/screenshot.gif)
 
 ### 2. Snake (`envpack/Snake-v0`)
 
@@ -122,13 +118,9 @@ A Gymnasium environment for the classic Snake game played on a 10x10 grid.
     *   `'valid_mask'`: `Box(4,)` binary mask of valid moves (direct backward folding is masked out).
     *   `'total_score'`: `Box(1,)` representing the number of food items eaten.
 *   **Rewards**: `+1.0` for eating food, `-0.01` step penalty, and `-1.0` for wall/self collision.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Snake Initial State](screenshots/snake_screenshot_initial.png) |
-| **Mid-game** | ![Snake Mid-game State](screenshots/snake_screenshot_mid_game.png) |
-| **Game Over** | ![Snake Game Over State](screenshots/snake_screenshot_game_over.png) |
+![Snake Gameplay](screenshots/snake_screenshot.gif)
 
 ### 3. Tetris (`envpack/Tetris-v0`)
 
@@ -141,13 +133,9 @@ A Gymnasium environment for the classic Tetris block-falling puzzle game played 
     *   `'valid_mask'`: `Box(5,)` binary mask of valid actions.
     *   `'total_score'`: `Box(1,)` representing the accumulated score.
 *   **Rewards**: Small survival reward of `+0.01` per step. Clearing lines yields: `0.1` (1 line), `0.3` (2 lines), `0.5` (3 lines), `1.0` (4 lines). Game over yields `-1.0`.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Tetris Initial State](screenshots/tetris_screenshot_initial.png) |
-| **Mid-game** | ![Tetris Mid-game State](screenshots/tetris_screenshot_mid_game.png) |
-| **Game Over** | ![Tetris Game Over State](screenshots/tetris_screenshot_game_over.png) |
+![Tetris Gameplay](screenshots/tetris_screenshot.gif)
 
 ### 4. Sudoku (`envpack/Sudoku-v0`)
 
@@ -163,13 +151,9 @@ A Gymnasium environment for solving standard 9x9 Sudoku puzzles.
     *   `'valid_mask'`: `Box(9, 9, 10)` representing safe (conflict-free) digits that can be placed in each cell.
     *   `'total_score'`: `Box(1,)` representing number of cells matching target solution.
 *   **Rewards**: `+1.0` for placing a correct digit, `-1.0` for removing/replacing a correct digit, `-0.1` for constraint conflict violations, and `-0.01` step penalty. Completion yields a `+10.0` bonus.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Sudoku Initial State](screenshots/sudoku_screenshot_initial.png) |
-| **Mid-game** | ![Sudoku Mid-game State](screenshots/sudoku_screenshot_mid_game.png) |
-| **Solved State** | ![Sudoku Solved State](screenshots/sudoku_screenshot_solved.png) |
+![Sudoku Gameplay](screenshots/sudoku_screenshot.gif)
 
 ### 5. Raptor (`envpack/Raptor-v0`)
 
@@ -183,13 +167,9 @@ A Gymnasium environment for a classic vertical scrolling shooter game inspired b
     *   `'total_score'`: `Box(1,)` representing the accumulated score.
     *   `'shield'`: `Box(1,)` representing the player's shield health level `[0..100]`.
 *   **Rewards**: Survival reward of `+0.05` per step. Destroying a basic enemy yields `+1.0` (score +100), destroying a shooter enemy yields `+2.5` (score +250). Collecting gold coins yields `+2.0` (score +500, credits +$50). Taking damage from enemy bullets yields `-1.5` (-10% shield), taking damage from direct ship collisions yields `-5.0` (-30% shield). Dying yields `-10.0` death penalty and terminates the episode.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Raptor Initial State](screenshots/raptor_screenshot_initial.png) |
-| **Mid-game** | ![Raptor Mid-game State](screenshots/raptor_screenshot_mid_game.png) |
-| **Game Over** | ![Raptor Game Over State](screenshots/raptor_screenshot_game_over.png) |
+![Raptor Gameplay](screenshots/raptor_screenshot.gif)
 
 ### 6. Doom (`envpack/Doom-v0`)
 
@@ -210,13 +190,9 @@ A pseudo-3D first-person shooter Gymnasium environment using JIT-accelerated ray
     *   Getting hit by an enemy yields `-1.0`.
     *   Clearing all enemies (victory) yields `+20.0`.
     *   Dying yields `-10.0`.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Doom Initial State](screenshots/doom_screenshot_initial.png) |
-| **Mid-game** | ![Doom Mid-game State](screenshots/doom_screenshot_mid_game.png) |
-| **Game Over** | ![Doom Game Over State](screenshots/doom_screenshot_game_over.png) |
+![Doom Gameplay](screenshots/doom_screenshot.gif)
 
 ### 7. Paratrooper (`envpack/Paratrooper-v0`)
 
@@ -237,13 +213,9 @@ A Gymnasium environment for the classic DOS-style Paratrooper arcade game.
     *   Shooting a bomb: `+15.0` (score +15)
     *   Firing penalty: `-0.01` to discourage infinite shooting
     *   Game over (turret destroyed by bomb or paratroopers): `-50.0`
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Paratrooper Initial State](screenshots/paratrooper_screenshot_initial.png) |
-| **Mid-game** | ![Paratrooper Mid-game State](screenshots/paratrooper_screenshot_mid_game.png) |
-| **Game Over** | ![Paratrooper Game Over State](screenshots/paratrooper_screenshot_game_over.png) |
+![Paratrooper Gameplay](screenshots/paratrooper_screenshot.gif)
 
 ### 8. Pacman (`envpack/Pacman-v0`)
 
@@ -260,13 +232,9 @@ A Gymnasium environment for the classic Pacman arcade maze crawler.
     *   Navigate a 15x15 wall grid maze to eat dots (+10 points) and power pellets (+50 points).
     *   **Ghost AI**: 4 ghosts with distinct target targeting heuristics (Blinky, Pinky, Inky, Clyde).
     *   **Frightened Mode**: Eating a power pellet turns ghosts blue/frightened for 40 steps, reducing their speed and allowing Pacman to eat them for +200 points.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Pacman Initial State](screenshots/pacman_screenshot_initial.png) |
-| **Mid-game** | ![Pacman Mid-game State](screenshots/pacman_screenshot_mid_game.png) |
-| **Game Over** | ![Pacman Game Over State](screenshots/pacman_screenshot_game_over.png) |
+![Pacman Gameplay](screenshots/pacman_screenshot.gif)
 
 ### 9. Platformer (`envpack/Platformer-v0`)
 
@@ -282,13 +250,9 @@ A Gymnasium environment for a side-scrolling 2D platformer.
     *   Horizontal velocity accumulation (inertia), drag, and vertical gravity.
     *   Strict AABB solid block collision resolution.
     *   Collect gold coins (+10 points) and dodge spikes (death and level reset). Reach the flag at `x=750` to win (+50 reward).
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Platformer Initial State](screenshots/platformer_screenshot_initial.png) |
-| **Mid-game** | ![Platformer Mid-game State](screenshots/platformer_screenshot_mid_game.png) |
-| **Game Over** | ![Platformer Game Over State](screenshots/platformer_screenshot_game_over.png) |
+![Platformer Gameplay](screenshots/platformer_screenshot.gif)
 
 ### 10. Tower Defense (`envpack/TowerDefense-v0`)
 
@@ -307,13 +271,9 @@ A Gymnasium environment for a wave-based Tower Defense game.
     *   Enemies spawn in waves, walking along an S-shaped path. Reaching the end drains 1 life.
     *   Gun towers fire projectile bullets. Laser towers project a continuous target-locked energy beam.
     *   Upgrading towers increases fire range and damage.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Tower Defense Initial State](screenshots/tower_defense_screenshot_initial.png) |
-| **Mid-game** | ![Tower Defense Mid-game State](screenshots/tower_defense_screenshot_mid_game.png) |
-| **Game Over** | ![Tower Defense Game Over State](screenshots/tower_defense_screenshot_game_over.png) |
+![Tower Defense Gameplay](screenshots/tower_defense_screenshot.gif)
 
 ### 11. Asteroids (`envpack/Asteroids-v0`)
 
@@ -330,13 +290,9 @@ A Gymnasium environment for a wrapping space Asteroids miner.
     *   Newtonian vector acceleration with friction damping (drag = 0.99).
     *   Toroidal wrap-around bounds. Fired lasers break Large asteroids (radius 24) into Medium (radius 12), which break into Small (radius 6).
     *   Splitting asteroids drops floating gems (+5 points) which must be collected. Collisions with asteroids deduct 1 life.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Asteroids Initial State](screenshots/asteroids_screenshot_initial.png) |
-| **Mid-game** | ![Asteroids Mid-game State](screenshots/asteroids_screenshot_mid_game.png) |
-| **Game Over** | ![Asteroids Game Over State](screenshots/asteroids_screenshot_game_over.png) |
+![Asteroids Gameplay](screenshots/asteroids_screenshot.gif)
 
 ---
 
@@ -359,13 +315,9 @@ A Gymnasium environment for two-player American Checkers (Draughts) played on an
     *   Invalid action attempts yield `-0.1` penalty, and steps have a small `-0.01` penalty.
 *   **Stalemate & Multi-jumps**:
     *   Standard American Checkers rules apply: jump captures are mandatory. If a multi-jump is available, the active jumper piece must continue jumping and the turn does not switch.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Checkers Initial State](screenshots/checkers_screenshot_initial.png) |
-| **Mid-game** | ![Checkers Mid-game State](screenshots/checkers_screenshot_mid_game.png) |
-| **Game Over** | ![Checkers Game Over State](screenshots/checkers_screenshot_game_over.png) |
+![Checkers Gameplay](screenshots/checkers_screenshot.gif)
 
 ### 2. Tron Light Cycles (`envpack/Tron-v0`)
 
@@ -383,13 +335,9 @@ A Gymnasium environment for two-player simultaneous-move Tron Light Cycles playe
     *   `-10.0` when Player 2 wins (Player 1 crashed).
     *   `0.0` for a head-on collision or joint crash (draw).
     *   `+0.01` survival reward per step for both players (net zero-sum is preserved).
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Tron Initial State](screenshots/tron_screenshot_initial.png) |
-| **Mid-game** | ![Tron Mid-game State](screenshots/tron_screenshot_mid_game.png) |
-| **Game Over** | ![Tron Game Over State](screenshots/tron_screenshot_game_over.png) |
+![Tron Light Cycles Gameplay](screenshots/tron_screenshot.gif)
 
 ### 3. Air Hockey (`envpack/AirHockey-v0`)
 
@@ -405,13 +353,9 @@ A Gymnasium environment for two-player continuous 2D physics-based Air Hockey.
 *   **Rewards**:
     *   `+1.0` when Player 1 scores in Player 2's goal (and `-1.0` when Player 2 scores).
     *   `+10.0` win bonus when Player 1 reaches 7 goals (and `-10.0` loss penalty when Player 2 reaches 7).
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Air Hockey Initial State](screenshots/air_hockey_screenshot_initial.png) |
-| **Mid-game** | ![Air Hockey Mid-game State](screenshots/air_hockey_screenshot_mid_game.png) |
-| **Game Over** | ![Air Hockey Game Over State](screenshots/air_hockey_screenshot_game_over.png) |
+![Air Hockey Gameplay](screenshots/air_hockey_screenshot.gif)
 
 ### 4. Racing Duel (`envpack/Racing-v0`)
 
@@ -433,13 +377,9 @@ A Gymnasium environment for two-player simultaneous manual-transmission car raci
     *   Realistic lateral tire slip (Pacejka/bicycle models). High throttle inputs consume tire traction circles, causing the rear wheels to lose traction, slide sideways, and trigger oversteer drifting.
 *   **Procedural Track spline**:
     *   Cubic spline loops are generated on reset. Going off-track (onto grass) drops the tire grip coefficient from 1.0 to 0.4 and penalizes the vehicle.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Racing Initial State](screenshots/racing_screenshot_initial.png) |
-| **Mid-game** | ![Racing Mid-game State](screenshots/racing_screenshot_mid_game.png) |
-| **Game Over** | ![Racing Game Over State](screenshots/racing_screenshot_game_over.png) |
+![Racing Duel Gameplay](screenshots/racing_screenshot.gif)
 
 ### 5. Street Fighter (`envpack/StreetFighter-v0`)
 
@@ -461,13 +401,9 @@ A Gymnasium environment for a simultaneous 2-player Street Fighter-style fightin
     *   **Blocking**: holding backward relative to opponent (moving away) or crouching and holding backward blocks incoming high/low attacks, reducing damage to 0 and preventing hitstun.
     *   **Combos**: consecutive hits within 15 steps increment the combo counter, shown on screen (e.g. "3 HIT COMBO!").
     *   **Match Rules**: first to 2 round wins wins the match.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Street Fighter Initial State](screenshots/street_fighter_screenshot_initial.png) |
-| **Mid-game** | ![Street Fighter Mid-game State](screenshots/street_fighter_screenshot_mid_game.png) |
-| **Game Over** | ![Street Fighter Game Over State](screenshots/street_fighter_screenshot_game_over.png) |
+![Street Fighter Gameplay](screenshots/street_fighter_screenshot.gif)
 
 ### 6. Tank Combat (`envpack/TankCombat-v0`)
 
@@ -485,13 +421,9 @@ A Gymnasium environment for two-player simultaneous Tank Combat in a grid maze.
     *   **Movement**: Sliding wall collision in a 10x10 maze grid.
     *   **Bullets**: sub-step precision, bounce off walls up to 2 times, deal 1 damage to tanks on hit. Respawn on HP depletion.
     *   **HP**: Max 3 HP, drawn as heart HUD symbols. First to 5 wins the match.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Tank Combat Initial State](screenshots/tank_combat_screenshot_initial.png) |
-| **Mid-game** | ![Tank Combat Mid-game State](screenshots/tank_combat_screenshot_mid_game.png) |
-| **Game Over** | ![Tank Combat Game Over State](screenshots/tank_combat_screenshot_game_over.png) |
+![Tank Combat Gameplay](screenshots/tank_combat_screenshot.gif)
 
 ### 7. Gravity Duel (`envpack/GravityDuel-v0`)
 
@@ -509,13 +441,9 @@ A Gymnasium environment for two-player continuous Gravity Duel with a central gr
     *   **Newtonian Thrusters**: Inertial sliding and thrust velocity vectors.
     *   **Warp Wrap-around**: Ships wrap around boundaries on all screen edges.
     *   **Concentric Star Gravity**: A massive sun in the center pulls ships and missiles with $1/r^2$ gravity. Colliding with the sun instantly absorbs/destroys the ship.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Gravity Duel Initial State](screenshots/gravity_duel_screenshot_initial.png) |
-| **Mid-game** | ![Gravity Duel Mid-game State](screenshots/gravity_duel_screenshot_mid_game.png) |
-| **Game Over** | ![Gravity Duel Game Over State](screenshots/gravity_duel_screenshot_game_over.png) |
+![Gravity Duel Gameplay](screenshots/gravity_duel_screenshot.gif)
 
 ### 8. Artillery Forts (`envpack/ArtilleryForts-v0`)
 
@@ -533,11 +461,7 @@ A Gymnasium environment for two-player simultaneous real-time Artillery Forts.
     *   **Wind Resistance**: Horizontal wind vectors alter trajectory paths.
     *   **Procedural Crater Cratering**: Shell impacts explode and excavate terrain, creating circular holes in the mountain line.
     *   **Dynamic Landslide Fall**: Forts fall vertically down if their supporting terrain is cleared.
-*   **Screenshots**:
+*   **Gameplay**:
 
-| State | Visual |
-| :---: | :---: |
-| **Initial State** | ![Artillery Forts Initial State](screenshots/artillery_forts_screenshot_initial.png) |
-| **Mid-game** | ![Artillery Forts Mid-game State](screenshots/artillery_forts_screenshot_mid_game.png) |
-| **Game Over** | ![Artillery Forts Game Over State](screenshots/artillery_forts_screenshot_game_over.png) |
+![Artillery Forts Gameplay](screenshots/artillery_forts_screenshot.gif)
 
