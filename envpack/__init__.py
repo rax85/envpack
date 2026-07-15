@@ -116,5 +116,18 @@ register(
     max_episode_steps=1000,
 )
 
+register(
+    id="envpack/SpaceInvaders-v0",
+    entry_point="envpack.envs.game_space_invaders.env:GymSpaceInvadersEnv",
+    max_episode_steps=1000,
+)
+
+register(
+    id="envpack/Battleship-v0",
+    entry_point="envpack.envs.game_battleship.env:GymBattleshipEnv",
+    max_episode_steps=500,
+)
+
+
 
 

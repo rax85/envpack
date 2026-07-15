@@ -63,6 +63,10 @@ env = gym.make('envpack/2048-v0')
 # To run Asteroids
 # env = gym.make('envpack/Asteroids-v0')
 
+# To run Space Invaders
+# env = gym.make('envpack/SpaceInvaders-v0')
+
+
 # To run Street Fighter
 # env = gym.make('envpack/StreetFighter-v0')
 
@@ -74,6 +78,10 @@ env = gym.make('envpack/2048-v0')
 
 # To run Artillery Forts
 # env = gym.make('envpack/ArtilleryForts-v0')
+
+# To run Battleship
+# env = gym.make('envpack/Battleship-v0')
+
 
 observation, info = env.reset()
 done = False
@@ -294,7 +302,27 @@ A Gymnasium environment for a wrapping space Asteroids miner.
 
 ![Asteroids Gameplay](screenshots/asteroids_screenshot.gif)
 
+### 12. Space Invaders (`envpack/SpaceInvaders-v0`)
+
+A Gymnasium environment for the classic arcade game Space Invaders.
+
+*   **Action Space**: `Discrete(4)`:
+    *   `0`: Stay, `1`: Move Left, `2`: Move Right, `3`: Shoot
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(300, 400, 3)` representing the RGB screen view.
+    *   `'valid_mask'`: `Box(4,)` binary mask of valid actions (shooting is disabled while on laser cooldown).
+    *   `'score'`: `Box(1,)` representing the accumulated score.
+    *   `'lives'`: `Box(1,)` representing remaining lives `[0..3]`.
+*   **Grid & Shooting Mechanics**:
+    *   Destroy waves of marching invaders (40 per wave) that increase in speed as their numbers dwindle.
+    *   Dodge randomly fired enemy bullets and shelter behind 3 destructible bunkers (each split into 4 segments with 3 HP each).
+    *   Invaders shift down and reverse direction when hitting boundaries. Reach player level or deplete all lives for Game Over.
+*   **Gameplay**:
+
+![Space Invaders Gameplay](screenshots/space_invaders_screenshot.gif)
+
 ---
+
 
 ## 👥 Two Player Games
 
@@ -464,4 +492,22 @@ A Gymnasium environment for two-player simultaneous real-time Artillery Forts.
 *   **Gameplay**:
 
 ![Artillery Forts Gameplay](screenshots/artillery_forts_screenshot.gif)
+
+### 9. Battleship (`envpack/Battleship-v0`)
+
+A Gymnasium environment for the classic turn-based two-player board game Battleship.
+
+*   **Action Space**: `MultiDiscrete([8, 8])` representing targeted coordinate `[row, col]` to fire a shot at on the opponent's grid.
+*   **Observation Space**: `Dict` containing:
+    *   `'observation'`: `Box(8, 8)` representing the grid state from the current active player's perspective (0: empty/unknown, 1: own intact ship, 2: own ship hit by opponent, 3: own empty cell hit by opponent, 4: opponent ship hit by current player, 5: opponent empty cell hit by current player).
+    *   `'valid_mask'`: `Box(8, 8)` binary mask of valid actions (cells that have not been targeted yet).
+    *   `'current_player'`: `Discrete(3)` active player ID (1 or 2).
+    *   `'ships_left'`: `Box(2,)` representing remaining intact ship cells `[P1_remaining, P2_remaining]`.
+*   **Gameplay & Setup Rules**:
+    *   5 standard ships (Carrier 5, Battleship 4, Destroyer 3, Submarine 3, Patrol Boat 2) are placed randomly without overlapping during reset.
+    *   Active players take turns shooting at the opponent's board. Successful hits award `+1.0` and allow checking details. Sinking all opponent ship cells (17 cells total) wins the game (`+10.0` reward).
+*   **Gameplay**:
+
+![Battleship Gameplay](screenshots/battleship_screenshot.gif)
+
 

@@ -25,6 +25,9 @@ from envpack.envs.game_pacman.env import GymPacmanEnv
 from envpack.envs.game_platformer.env import GymPlatformerEnv
 from envpack.envs.game_tower_defense.env import GymTowerDefenseEnv
 from envpack.envs.game_asteroids.env import GymAsteroidsEnv
+from envpack.envs.game_space_invaders.env import GymSpaceInvadersEnv
+from envpack.envs.game_battleship.env import GymBattleshipEnv
+
 
 
 def sample_action(env, obs):
@@ -121,7 +124,10 @@ def main():
         (GymPlatformerEnv(), "platformer_screenshot"),
         (GymTowerDefenseEnv(), "tower_defense_screenshot"),
         (GymAsteroidsEnv(), "asteroids_screenshot"),
+        (GymSpaceInvadersEnv(), "space_invaders_screenshot"),
+        (GymBattleshipEnv(), "battleship_screenshot"),
     ]
+
     
     for env, name in envs:
         print(f"Generating {name}.gif...")
